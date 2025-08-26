@@ -597,8 +597,9 @@ class GeminiImageApp:
     
     def process_prompts(self, api_key, folder_name, time_value):
         try:
-            # Create main folder
-            main_folder = os.path.join(os.getcwd(), folder_name)
+            # Create main folder in the same directory as the script
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            main_folder = os.path.join(script_dir, folder_name)
             os.makedirs(main_folder, exist_ok=True)
             
             total_prompts = len(self.prompts)
