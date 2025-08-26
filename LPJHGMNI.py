@@ -200,27 +200,66 @@ class GeminiImageApp:
         right_frame.pack(side=tk.RIGHT, fill=tk.Y)
         right_frame.pack_propagate(False)
         
-        # Folder name input
+        # Folder selection
         folder_label = tk.Label(
             right_frame,
-            text="Tên folder:",
+            text="Chọn folder lưu:",
             font=("Arial", 12, "bold"),
             fg=self.text_color,
             bg=self.bg_color
         )
         folder_label.pack(pady=(0, 10))
         
-        self.folder_entry = tk.Entry(
-            right_frame,
-            font=("Arial", 12),
-            bg=self.secondary_color,
+        self.folder_frame = tk.Frame(right_frame, bg=self.bg_color)
+        self.folder_frame.pack(fill=tk.X, pady=(0, 20))
+        
+        self.select_folder_btn = tk.Button(
+            self.folder_frame,
+            text="📁 Chọn folder",
+            font=("Arial", 11, "bold"),
+            bg=self.button_color,
             fg=self.text_color,
-            insertbackground=self.accent_color,
+            activebackground=self.accent_color,
+            activeforeground=self.bg_color,
             relief=tk.FLAT,
-            justify=tk.CENTER
+            padx=15,
+            pady=8,
+            cursor="hand2",
+            command=self.select_folder
         )
-        self.folder_entry.pack(fill=tk.X, pady=(0, 20))
-        self.folder_entry.insert(0, "test1")
+        self.select_folder_btn.pack(fill=tk.X)
+        
+        self.folder_display_frame = tk.Frame(self.folder_frame, bg=self.bg_color)
+        
+        self.folder_path_label = tk.Label(
+            self.folder_display_frame,
+            text="",
+            font=("Arial", 10),
+            fg=self.accent_color,
+            bg=self.bg_color,
+            wraplength=160,
+            justify=tk.LEFT
+        )
+        self.folder_path_label.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        self.close_folder_btn = tk.Button(
+            self.folder_display_frame,
+            text="✕",
+            font=("Arial", 12, "bold"),
+            bg=self.bg_color,
+            fg="#ff4444",
+            activebackground=self.bg_color,
+            activeforeground="#cc3333",
+            relief=tk.FLAT,
+            bd=0,
+            padx=5,
+            pady=0,
+            cursor="hand2",
+            command=self.close_folder
+        )
+        self.close_folder_btn.pack(side=tk.RIGHT)
+        
+        self.selected_folder = None
         
         time_label = tk.Label(
             right_frame,
@@ -560,6 +599,31 @@ class GeminiImageApp:
                 self.status_label.config(text="Đã lưu thay đổi")
             except Exception as e:
                 messagebox.showerror("Lỗi", f"Không thể lưu file: {str(e)}")
+    
+    def select_folder(self):
+        folder_path = filedialog.askdirectory(
+            title="Chọn folder để lưu ảnh"
+        )
+        
+        if folder_path:
+            self.selected_folder = folder_path
+            self.show_folder_selected(folder_path)
+    
+    def show_folder_selected(self, folder_path):
+        self.select_folder_btn.pack_forget()
+        # Show shortened path for display
+        display_path = folder_path
+        if len(display_path) > 25:
+            display_path = "..." + display_path[-22:]
+        self.folder_path_label.config(text=display_path)
+        self.folder_display_frame.pack(fill=tk.X)
+        self.status_label.config(text=f"Folder đã chọn: {os.path.basename(folder_path)}")
+    
+    def close_folder(self):
+        self.selected_folder = None
+        self.folder_display_frame.pack_forget()
+        self.select_folder_btn.pack(fill=tk.X)
+        self.status_label.config(text="Sẵn sàng")
                 
     def start_process(self):
         if self.is_processing:
@@ -574,9 +638,8 @@ class GeminiImageApp:
             messagebox.showerror("Lỗi", "Vui lòng nhập API Key!")
             return
             
-        folder_name = self.folder_entry.get().strip()
-        if not folder_name:
-            messagebox.showerror("Lỗi", "Vui lòng nhập tên folder!")
+        if not self.selected_folder:
+            messagebox.showerror("Lỗi", "Vui lòng chọn folder để lưu ảnh!")
             return
             
         try:
@@ -591,20 +654,18 @@ class GeminiImageApp:
         self.is_processing = True
         self.start_btn.config(text="Đang xử lý...", state="disabled")
         
-        thread = threading.Thread(target=self.process_prompts, args=(api_key, folder_name, time_value))
+        thread = threading.Thread(target=self.process_prompts, args=(api_key, time_value))
         thread.daemon = True
         thread.start()
     
-    def process_prompts(self, api_key, folder_name, time_value):
+    def process_prompts(self, api_key, time_value):
         try:
-            # Create main folder in the same directory as the script
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            main_folder = os.path.join(script_dir, folder_name)
-            os.makedirs(main_folder, exist_ok=True)
+            # Use the selected folder directly
+            main_folder = self.selected_folder
             
-            # Show user where folder is created
+            # Show user where images will be saved
             self.root.after(0, lambda: 
-                self.status_label.config(text=f"📁 Folder tạo tại: {main_folder}"))
+                self.status_label.config(text=f"📁 Lưu ảnh vào: {os.path.basename(main_folder)}"))
             
             total_prompts = len(self.prompts)
             
