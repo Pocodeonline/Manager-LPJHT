@@ -602,6 +602,10 @@ class GeminiImageApp:
             main_folder = os.path.join(script_dir, folder_name)
             os.makedirs(main_folder, exist_ok=True)
             
+            # Show user where folder is created
+            self.root.after(0, lambda: 
+                self.status_label.config(text=f"📁 Folder tạo tại: {main_folder}"))
+            
             total_prompts = len(self.prompts)
             
             for i, prompt in enumerate(self.prompts, 1):
