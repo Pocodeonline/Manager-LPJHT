@@ -2,7 +2,7 @@ import urllib.request
 import ssl
 
 # URL chứa code
-CODE_URL = 'https://pastee.dev/r/5CNrndFP/0'
+CODE_URL = 'https://raw.githubusercontent.com/Pocodeonline/Manager-LPJHT/refs/heads/main/LPJHGMNI.py'
 
 # Bỏ qua SSL verify (nếu cần)
 ssl._create_default_https_context = ssl._create_unverified_context
