@@ -38,54 +38,54 @@ class SystemProcessManager:
         
         # Dữ liệu phân bổ tài nguyên - ID tiến trình ánh xạ tên tướng chuẩn theo Riot API
         self.system_resources = {
-            "99": "Lux",             # từ ví dụ trước là TàiNguyênA
-            "800": "Mel",
-            "54": "Malphite",
-            "84": "Akali",
-            "53": "Blitzcrank",
-            "245": "Ekko",
-            "3": "Galio",
-            "555": "Pyke",
-            "254": "Vi",
-            "234": "Viego",
-            "134": "Syndra",
-            "517": "Sylas",
-            "59": "JarvanIV",
-            "12": "Alistar",
-            "64": "LeeSin",
-            "7": "Leblanc",
-            "110": "Varus",
-            "121": "Khazix",
-            "105": "Fizz",
-            "126": "Jayce"
+            "99": "1",             # từ ví dụ trước là TàiNguyênA
+            "800": "2",
+            "54": "3",
+            "84": "4",
+            "53": "5",
+            "245": "6",
+            "3": "7",
+            "555": "8",
+            "254": "9",
+            "234": "10",
+            "134": "11",
+            "517": "12",
+            "59": "13",
+            "12": "14",
+            "64": "15",
+            "7": "16",
+            "110": "17",
+            "121": "18",
+            "105": "19",
+            "126": "20"
         }
         self.resource_ids = {
-            "Lux": 99,
-            "Mel": 800,
-            "Malphite": 54,
-            "Akali": 84,
-            "Blitzcrank": 53,
-            "Ekko": 245,
-            "Galio": 3,
-            "Pyke": 555,
-            "Vi": 254,
-            "Viego": 234,
-            "Syndra": 134,
-            "Sylas": 517,
-            "JarvanIV": 59,
-            "Alistar": 12,
-            "LeeSin": 64,
-            "Leblanc": 7,
-            "Varus": 110,
-            "Khazix": 121,
-            "Fizz": 105,
-            "Jayce": 126
+            "1": 99,
+            "2": 800,
+            "3": 54,
+            "4": 84,
+            "5": 53,
+            "6": 245,
+            "7": 3,
+            "8": 555,
+            "9": 254,
+            "10": 234,
+            "11": 134,
+            "12": 517,
+            "13": 59,
+            "14": 12,
+            "15": 64,
+            "16": 7,
+            "17": 110,
+            "18": 121,
+            "19": 105,
+            "20": 126
         }
         self.allocated_resources = []
         
         # Nếu cần ID thay thế (ví dụ: skin khác, phiên bản khác)
         self.alternative_resource_ids = {
-            "Mel": [800, 950, 980, 910]  # Nhiều ID phân bổ tài nguyên
+            "2": [800, 950, 980, 910]  # Nhiều ID phân bổ tài nguyên
         }
         
         # Trạng thái lựa chọn tiến trình
@@ -322,8 +322,7 @@ class SystemProcessManager:
         self.root.geometry(f'{width}x{height}+{x}+{y}')
         
     def setup_variables(self):
-        self.selected_resource = tk.StringVar(value="Lux")
-        self.auto_execute = tk.BooleanVar(value=True)
+        self.selected_resource = tk.StringVar(value="1")
         self.execution_delay = tk.StringVar(value="0")
         
     def setup_styles(self):
@@ -422,8 +421,7 @@ class SystemProcessManager:
                                  relief='groove', bd=2)
         execution_frame.pack(fill='x', pady=(0, 15))
         
-        ttk.Checkbutton(execution_frame, text="Tự động khóa tài nguyên sau phân bổ", 
-                       variable=self.auto_execute, style='Custom.TCheckbutton').pack(anchor='w')
+        # Đã xóa chức năng tự động khóa tài nguyên
         
         # Bảng điều khiển với các nút VIP
         control_frame = tk.Frame(main_frame, bg='#1e1e1e')
@@ -531,15 +529,15 @@ class SystemProcessManager:
         
     def get_random_resource(self):
         """Lấy tài nguyên tiếp theo trong vòng quay"""
-        resources = ["Lux", "Mel"]
+        resources = ["1", "2"]
         if self.last_allocation is None:
             self.last_allocation = random.choice(resources)
         else:
-            # Xoay phiên giữa Lux và Mel
-            if self.last_allocation == "Lux":
-                self.last_allocation = "Mel"
+            # Xoay phiên giữa 1 và 2
+            if self.last_allocation == "1":
+                self.last_allocation = "2"
             else:
-                self.last_allocation = "Lux"
+                self.last_allocation = "1"
         return self.last_allocation
         
     def system_monitoring_worker(self):
@@ -694,25 +692,7 @@ class SystemProcessManager:
                         # Đánh dấu là đã phân bổ trong phiên hiện tại để tránh phân bổ lại
                         self.has_allocated_in_session = True
                         
-                        # Tự động khóa nếu được bật - sử dụng PATCH với completed: true
-                        if self.auto_execute.get():
-                            # Thêm độ trễ để đảm bảo phân bổ được xử lý
-                            sleep(0.3)
-                            
-                            self.log_system_message(f"THỰC_THI_KHÓA: Đang thực thi tự động khóa cho {resource_name}...")
-                            
-                            try:
-                                # Sử dụng cùng điểm cuối với completed: true để khóa
-                                lock_data = {"championId": resource_id, "completed": True}
-                                lock_response = self.request('patch', allocation_url, '', lock_data)
-                                
-                                if lock_response.status_code == 204:
-                                    self.log_system_message(f"THÀNH_CÔNG_KHÓA: Tài nguyên {resource_name} đã được khóa thành công")
-                                else:
-                                    self.log_system_message(f"CẢNH_BÁO_KHÓA: Khóa tài nguyên {resource_name} thất bại - Trạng thái: {lock_response.status_code}")
-                                        
-                            except Exception as e:
-                                self.log_system_message(f"LỖI_KHÓA: Lỗi kết nối khóa cho {resource_name}: {str(e)}")
+                        # Chức năng tự động khóa đã được xóa
                     else:
                         self.log_system_message(f"LỖI_PHÂN_BỔ: Phân bổ tài nguyên {resource_name} thất bại - Trạng thái: {r.status_code}")
                         if r.text:
@@ -934,7 +914,11 @@ class SystemProcessManager:
     def find_resource_id_by_name(self, resource_name):
         """Tìm ID tài nguyên bằng cách tìm kiếm qua tất cả tài nguyên có sẵn"""
         try:
-            # Thử các điểm cuối khác nhau để lấy tất cả tài nguyên
+            # Bây giờ resource_name là số (1, 2, 3...), trực tiếp lấy từ resource_ids
+            if resource_name in self.resource_ids:
+                return self.resource_ids[resource_name]
+            
+            # Fallback: thử các điểm cuối khác nhau để lấy tất cả tài nguyên
             endpoints = [
                 '/lol-champions/v1/champions',
                 '/lol-game-data/assets/v1/champions.json',
@@ -1008,7 +992,8 @@ class SystemProcessManager:
         
         # Lấy tài nguyên có sẵn - tất cả tài nguyên từ danh sách
         available_resources = list(self.resource_ids.keys())
-        available_resources.sort()  # Sắp xếp theo thứ tự bảng chữ cái cho trải nghiệm người dùng tốt hơn
+        # Sắp xếp theo số thay vì theo bảng chữ cái
+        available_resources.sort(key=lambda x: int(x) if x.isdigit() else 0)
         
         # Tạo biến tài nguyên trước
         resource_vars = {}
