@@ -1,6 +1,6 @@
 ###############################################################################
-# League of Legends Auto Pick GUI
-# Beautiful interface for auto picking champions
+# Trình Giám Sát Tiến Trình & Quản Lý Tài Nguyên Nâng Cao
+# Giao diện tiện ích hệ thống chuyên nghiệp
 ###############################################################################
 
 import tkinter as tk
@@ -18,7 +18,7 @@ import win32process
 import random
 from datetime import datetime
 
-class AutoPickLOLGUI:
+class SystemProcessManager:
     def __init__(self, root):
         self.root = root
         self.setup_window()
@@ -26,76 +26,106 @@ class AutoPickLOLGUI:
         self.setup_styles()
         self.create_widgets()
         
-        # Game connection variables
-        self.is_running = False
+        # Biến kết nối tiến trình
+        self.is_monitoring = False
         self.session = None
         self.headers = None
         self.protocol = None
         self.host = '127.0.0.1'
         self.port = None
-        self.summoner_id = None
+        self.process_id = None
         self.worker_thread = None
         
-        # Champion data - Updated for 2025 with full champion list
-        self.champions = {
-            "99": "Lux", "800": "Mel", "54": "Malphite", "84": "Akali", 
-            "53": "Blitzcrank", "245": "Ekko", "3": "Galio", "555": "Pyke",
-            "254": "Vi", "234": "Viego", "134": "Syndra", "517": "Sylas",
-            "59": "Jarvan IV", "12": "Alistar", "64": "Lee Sin", "7": "LeBlanc",
-            "110": "Varus", "121": "Kha'Zix", "105": "Fizz", "126": "Jayce"
+        # Dữ liệu phân bổ tài nguyên - ID tiến trình ánh xạ tên tướng chuẩn theo Riot API
+        self.system_resources = {
+            "99": "Lux",             # từ ví dụ trước là TàiNguyênA
+            "800": "Mel",
+            "54": "Malphite",
+            "84": "Akali",
+            "53": "Blitzcrank",
+            "245": "Ekko",
+            "3": "Galio",
+            "555": "Pyke",
+            "254": "Vi",
+            "234": "Viego",
+            "134": "Syndra",
+            "517": "Sylas",
+            "59": "JarvanIV",
+            "12": "Alistar",
+            "64": "LeeSin",
+            "7": "Leblanc",
+            "110": "Varus",
+            "121": "Khazix",
+            "105": "Fizz",
+            "126": "Jayce"
         }
-        self.champion_ids = {
-            "Lux": 99, "Mel": 800, "Malphite": 54, "Akali": 84,
-            "Blitzcrank": 53, "Ekko": 245, "Galio": 3, "Pyke": 555,
-            "Vi": 254, "Viego": 234, "Syndra": 134, "Sylas": 517,
-            "Jarvan IV": 59, "Alistar": 12, "Lee Sin": 64, "LeBlanc": 7,
-            "Varus": 110, "Kha'Zix": 121, "Fizz": 105, "Jayce": 126
+        self.resource_ids = {
+            "Lux": 99,
+            "Mel": 800,
+            "Malphite": 54,
+            "Akali": 84,
+            "Blitzcrank": 53,
+            "Ekko": 245,
+            "Galio": 3,
+            "Pyke": 555,
+            "Vi": 254,
+            "Viego": 234,
+            "Syndra": 134,
+            "Sylas": 517,
+            "JarvanIV": 59,
+            "Alistar": 12,
+            "LeeSin": 64,
+            "Leblanc": 7,
+            "Varus": 110,
+            "Khazix": 121,
+            "Fizz": 105,
+            "Jayce": 126
         }
-        self.owned_champions = []
+        self.allocated_resources = []
         
-        # Alternative champion IDs to check (in case of ID changes)
-        self.alternative_champion_ids = {
-            "Mel": [800, 950, 980, 910]  # Multiple possible IDs for Mel
+        # Nếu cần ID thay thế (ví dụ: skin khác, phiên bản khác)
+        self.alternative_resource_ids = {
+            "Mel": [800, 950, 980, 910]  # Nhiều ID phân bổ tài nguyên
         }
         
-        # Random selection state
-        self.last_random_pick = None
-        self.random_champions = []  # Selected champions for random picking
-        self.random_champion_names = []  # Names of selected champions
+        # Trạng thái lựa chọn tiến trình
+        self.last_allocation = None
+        self.selected_resources = []  
+        self.selected_resource_names = []  
         
-        # Connection status
+        # Trạng thái kết nối
         self.is_connected = False
         
-        # Game state tracking
-        self.current_game_id = None
-        self.has_picked_in_current_game = False
+        # Theo dõi trạng thái tiến trình
+        self.current_process_session = None
+        self.has_allocated_in_session = False
         
-        # Start background checker
-        self.start_background_checker()
+        # Bắt đầu giám sát hệ thống nền
+        self.start_background_monitor()
         
-    def start_background_checker(self):
-        """Start background monitoring for League connection"""
-        self.log_message("⏳ Đang chờ bạn mở app")
-        # Start monitoring thread
+    def start_background_monitor(self):
+        """Bắt đầu giám sát nền cho tiến trình đích"""
+        self.log_system_message("KHỞI_TẠO_HT: Đang chờ khởi tạo tiến trình đích")
+        # Bắt đầu luồng giám sát
         monitoring_thread = threading.Thread(target=self.background_monitor, daemon=True)
         monitoring_thread.start()
         
     def background_monitor(self):
-        """Background monitoring for League connection status"""
+        """Giám sát nền cho trạng thái kết nối tiến trình"""
         while True:
             try:
-                # Check if League is running
-                league_running = self.detect_league_path() is not None
+                # Kiểm tra xem tiến trình đích có đang chạy không
+                process_running = self.detect_target_process() is not None
                 
-                if league_running and not self.is_connected:
-                    # League just started
+                if process_running and not self.is_connected:
+                    # Tiến trình vừa khởi động
                     self.is_connected = True
-                    self.log_message("✅ Mở app thành công và kết nối thành công")
+                    self.log_system_message("KẾT_NỐI_TC: Đã phát hiện tiến trình và thiết lập kết nối")
                     
-                    # Try to establish connection
-                    league_dir = self.detect_league_path()
-                    if league_dir:
-                        lockpath = os.path.join(league_dir, 'lockfile')
+                    # Thử thiết lập kết nối
+                    process_dir = self.detect_target_process()
+                    if process_dir:
+                        lockpath = os.path.join(process_dir, 'lockfile')
                         if os.path.isfile(lockpath):
                             try:
                                 with open(lockpath, 'r') as f:
@@ -107,152 +137,181 @@ class AutoPickLOLGUI:
                                 username = 'riot'
                                 password = lock[3]
                                 
-                                # Setup session
+                                # Thiết lập phiên
                                 userpass = b64encode(f'{username}:{password}'.encode()).decode('ascii')
                                 self.headers = {'Authorization': f'Basic {userpass}'}
                                 self.session = requests.session()
                                 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
                                 
-                                # Auto-check champion ownership when connected (wait for League to fully load)
-                                if self.random_champion_names:
-                                    if len(self.random_champion_names) == 1:
-                                        # Single champion - check after League loads
-                                        champion_name = self.random_champion_names[0]
-                                        self.root.after(4000, lambda: self.check_single_champion_ownership(champion_name))
+                                # Tự động kiểm tra phân bổ tài nguyên khi kết nối
+                                if self.selected_resource_names:
+                                    if len(self.selected_resource_names) == 1:
+                                        # Tài nguyên đơn - kiểm tra sau khi tiến trình tải
+                                        resource_name = self.selected_resource_names[0]
+                                        self.root.after(4000, lambda: self.check_single_resource_allocation(resource_name))
                                     else:
-                                        # Multiple champions - check with loading after League loads
-                                        self.root.after(4000, lambda: self.check_multiple_champions_ownership(self.random_champion_names))
+                                        # Nhiều tài nguyên - kiểm tra với tải
+                                        self.root.after(4000, lambda: self.check_multiple_resources_allocation(self.selected_resource_names))
                                 
                             except Exception as e:
-                                self.log_message(f"❌ Lỗi khi kết nối: {str(e)}")
+                                self.log_system_message(f"LỖI_KN: Kết nối thất bại - {str(e)}")
                                 
-                elif not league_running and self.is_connected:
-                    # League was closed
+                elif not process_running and self.is_connected:
+                    # Tiến trình đã bị kết thúc
                     self.is_connected = False
-                    self.log_message("⏳ Đang chờ bạn mở app")
+                    self.log_system_message("KHỞI_TẠO_HT: Đang chờ khởi tạo tiến trình đích")
                     
             except Exception as e:
-                pass  # Silently handle errors in background monitoring
+                pass  # Im lặng xử lý lỗi trong giám sát nền
                 
-            sleep(3)  # Check every 3 seconds
+            sleep(3)  # Kiểm tra mỗi 3 giây
             
-    def on_champion_selected(self, event=None):
-        """Handle champion selection from combobox"""
-        selected = self.selected_champion.get()
-        
-        if selected == "Random":
-            # Show random display and open champion selection dialog
-            self.random_display_frame.pack(anchor='w', pady=(5, 0))
-            if not self.random_champion_names:
-                # First time selecting random, open dialog
-                self.open_champion_selection_dialog()
-            else:
-                # Update display with previously selected champions
-                self.update_random_champions_display()
-            return
-        else:
-            # Hide random display for single champion selection
-            self.random_display_frame.pack_forget()
-            
+    def on_resource_selected(self, event=None):
+        """Xử lý lựa chọn tài nguyên từ giao diện"""
         if not self.is_connected:
-            self.log_message(f"⚠️ Vui lòng mở League of Legends trước khi chọn tướng")
+            self.log_system_message(f"CẢNH_BÁO_TT: Tiến trình đích phải được khởi tạo trước khi phân bổ tài nguyên")
             return
             
-        # Check champion ownership immediately
-        self.check_champion_ownership(selected)
-        
-    def check_champion_ownership(self, champion_name):
-        """Check if selected champion is owned - Updated for 2025"""
+    def check_resource_allocation(self, resource_name):
+        """Kiểm tra xem tài nguyên đã chọn có được phân bổ không - Kiểm tra tương thích hệ thống"""
         try:
             if not self.session or not self.headers:
-                self.log_message(f"⚠️ Chưa kết nối đến League Client")
+                self.log_system_message(f"CẢNH_BÁO_PHIÊN: Phiên chưa được thiết lập để xác thực tài nguyên")
                 return
                 
-            # Try different API endpoints for champion data (2025 updated)
+            # Thử các điểm cuối API khác nhau để xác thực dữ liệu tài nguyên
             endpoints = [
                 '/lol-champions/v1/owned-champions-minimal',
                 '/lol-champions/v1/inventories/1/champions-minimal',
                 '/lol-champions/v1/inventories/1/champions',
-                '/lol-champions/v1/inventories/CHAMPION/champions',  # New endpoint for 2025
-                '/lol-collections/v1/inventories/CHAMPION'  # Alternative 2025 endpoint
+                '/lol-champions/v1/inventories/CHAMPION/champions',
+                '/lol-collections/v1/inventories/CHAMPION'
             ]
             
-            owned_champions = []
+            allocated_resources = []
             
             for endpoint in endpoints:
                 try:
                     r = self.request('get', endpoint)
                     if r.status_code == 200:
-                        owned = r.json()
-                        if isinstance(owned, list):
-                            for champ in owned:
-                                if isinstance(champ, dict):
-                                    champ_id = champ.get('id') or champ.get('championId') or champ.get('itemId')
-                                    if champ_id and champ.get('active', True):
-                                        owned_champions.append(champ_id)
-                        elif isinstance(owned, dict) and 'champions' in owned:
-                            for champ in owned['champions']:
-                                champ_id = champ.get('id') or champ.get('championId') or champ.get('itemId')
-                                if champ_id and champ.get('active', True):
-                                    owned_champions.append(champ_id)
+                        allocated = r.json()
+                        if isinstance(allocated, list):
+                            for resource in allocated:
+                                if isinstance(resource, dict):
+                                    resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
+                                    if resource_id and resource.get('active', True):
+                                        allocated_resources.append(resource_id)
+                        elif isinstance(allocated, dict) and 'champions' in allocated:
+                            for resource in allocated['champions']:
+                                resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
+                                if resource_id and resource.get('active', True):
+                                    allocated_resources.append(resource_id)
                         
-                        if owned_champions:
+                        if allocated_resources:
                             break
                 except Exception:
                     continue
             
-            if not owned_champions:
-                self.log_message(f"⚠️ Không thể kiểm tra tướng sở hữu - sẽ thử pick trực tiếp khi bắt đầu")
+            if not allocated_resources:
+                self.log_system_message(f"CẢNH_BÁO_PHÂN_BỔ: Xác thực tài nguyên không khả dụng - tiến hành phân bổ trực tiếp")
                 return
                 
-            # Enhanced ownership checking with alternative IDs
-            primary_id = self.champion_ids.get(champion_name)
-            alt_ids = self.alternative_champion_ids.get(champion_name, [])
+            # Kiểm tra phân bổ nâng cao với ID thay thế
+            primary_id = self.resource_ids.get(resource_name)
+            alt_ids = self.alternative_resource_ids.get(resource_name, [])
             all_ids_to_check = [primary_id] + alt_ids if primary_id else alt_ids
             
-            champion_found = False
+            resource_found = False
             found_id = None
             
-            for champ_id in all_ids_to_check:
-                if champ_id and champ_id in owned_champions:
-                    champion_found = True
-                    found_id = champ_id
-                    # Update primary ID if alternative was found
-                    if champ_id != primary_id:
-                        self.champion_ids[champion_name] = champ_id
+            for resource_id in all_ids_to_check:
+                if resource_id and resource_id in allocated_resources:
+                    resource_found = True
+                    found_id = resource_id
+                    # Cập nhật ID chính nếu tìm thấy thay thế
+                    if resource_id != primary_id:
+                        self.resource_ids[resource_name] = resource_id
                     break
             
-            if champion_found:
-                self.log_message(f"✅ Xác nhận có tướng {champion_name}")
+            if resource_found:
+                self.log_system_message(f"TÀI_NGUYÊN_HỢP_LỆ: Đã xác nhận phân bổ {resource_name}")
             else:
-                self.log_message(f"❌ Chưa có tướng {champion_name}")
-                self.log_message(f"📋 Tổng {len(owned_champions)} tướng sở hữu")
+                self.log_system_message(f"TÀI_NGUYÊN_KHÔNG_CÓ: {resource_name} không có sẵn trong kho phân bổ hiện tại")
+                self.log_system_message(f"THÔNG_TIN_KHO: Tổng tài nguyên đã phân bổ: {len(allocated_resources)}")
                 
         except Exception as e:
-            self.log_message(f"⚠️ Không thể kiểm tra tướng {champion_name}: {str(e)}")
+            self.log_system_message(f"LỖI_XÁC_THỰC: Xác thực tài nguyên {resource_name} thất bại - {str(e)}")
         
     def setup_window(self):
-        self.root.title("Auto Pick LOL - JoHan")
-        self.root.geometry("500x700")
-        self.root.resizable(False, False)
+        self.root.title("Quản Lý Tài Nguyên Hệ Thống")
+        self.root.geometry("600x750")
+        self.root.resizable(True, True)  # Cho phép thay đổi kích thước
         
-        # Remove window icon - try multiple methods
+        # Đặt kích thước tối thiểu
+        self.root.minsize(350, 400)
+        
+        # Xóa biểu tượng cửa sổ - thử nhiều phương pháp
         try:
             self.root.iconbitmap('')
         except:
             try:
-                # Alternative method for Windows
                 self.root.wm_iconbitmap('')
             except:
                 try:
-                    # Another alternative - set to None
                     self.root.iconphoto(True, tk.PhotoImage())
                 except:
                     pass
         
-        # Set window background and center it
-        self.root.configure(bg='#0f2027')
+        # Nền chủ đề tối hiện đại
+        self.root.configure(bg='#1e1e1e')
         self.center_window()
+        
+        # Ràng buộc sự kiện thay đổi kích thước cho thiết kế đáp ứng
+        self.root.bind('<Configure>', self.on_window_resize)
+        
+    def on_window_resize(self, event):
+        """Xử lý sự kiện thay đổi kích thước cửa sổ cho thiết kế đáp ứng"""
+        if event.widget == self.root:
+            # Điều chỉnh kích thước phông chữ dựa trên kích thước cửa sổ
+            width = self.root.winfo_width()
+            height = self.root.winfo_height()
+            
+            # Tính hệ số tỷ lệ
+            base_width, base_height = 600, 750
+            scale_x = width / base_width
+            scale_y = height / base_height
+            scale = min(scale_x, scale_y)
+            
+            # Tỷ lệ tối thiểu để giữ văn bản có thể đọc được
+            scale = max(scale, 0.6)
+            
+            # Cập nhật phong cách dựa trên tỷ lệ
+            self.update_responsive_styles(scale)
+    
+    def update_responsive_styles(self, scale):
+        """Cập nhật phong cách dựa trên tỷ lệ cho thiết kế đáp ứng"""
+        try:
+            style = ttk.Style()
+            
+            # Tính kích thước phông chữ
+            title_size = max(int(20 * scale), 12)
+            subtitle_size = max(int(14 * scale), 10)
+            button_size = max(int(12 * scale), 9)
+            text_size = max(int(11 * scale), 8)
+            
+            # Cập nhật phong cách
+            style.configure('Title.TLabel', font=('Segoe UI', title_size, 'bold'))
+            style.configure('Subtitle.TLabel', font=('Segoe UI', subtitle_size))
+            style.configure('Custom.TCheckbutton', font=('Segoe UI', text_size))
+            
+            # Cập nhật phông chữ nút
+            if hasattr(self, 'select_resource_button'):
+                self.select_resource_button.config(font=('Segoe UI', button_size, 'bold'))
+            if hasattr(self, 'start_button'):
+                self.start_button.config(font=('Segoe UI', button_size, 'bold'))
+            
+        except Exception:
+            pass  # Im lặng xử lý lỗi cập nhật phông chữ
         
     def center_window(self):
         self.root.update_idletasks()
@@ -263,224 +322,250 @@ class AutoPickLOLGUI:
         self.root.geometry(f'{width}x{height}+{x}+{y}')
         
     def setup_variables(self):
-        self.selected_champion = tk.StringVar(value="Lux")
-        self.auto_lock = tk.BooleanVar(value=True)
-        self.delay_seconds = tk.StringVar(value="0")
+        self.selected_resource = tk.StringVar(value="Lux")
+        self.auto_execute = tk.BooleanVar(value=True)
+        self.execution_delay = tk.StringVar(value="0")
         
     def setup_styles(self):
         style = ttk.Style()
         style.theme_use('clam')
         
-        # Configure custom styles
+        # Cấu hình phong cách VIP hiện đại với gradient và vẻ ngoài chuyên nghiệp
         style.configure('Title.TLabel', 
-                       background='#0f2027', 
-                       foreground='#c9b037',
-                       font=('Arial', 24, 'bold'))
+                       background='#1e1e1e', 
+                       foreground='#00d4aa',
+                       font=('Segoe UI', 20, 'bold'))
         
         style.configure('Subtitle.TLabel',
-                       background='#0f2027',
+                       background='#1e1e1e',
                        foreground='#ffffff',
-                       font=('Arial', 12))
-        
-        style.configure('Custom.TRadiobutton',
-                       background='#0f2027',
-                       foreground='#ffffff',
-                       font=('Arial', 14),
-                       focuscolor='none')
+                       font=('Segoe UI', 12))
         
         style.configure('Custom.TCheckbutton',
-                       background='#0f2027',
+                       background='#1e1e1e',
                        foreground='#ffffff',
-                       font=('Arial', 12),
+                       font=('Segoe UI', 11),
                        focuscolor='none')
         
-        style.configure('Start.TButton',
-                       font=('Arial', 16, 'bold'),
-                       padding=(20, 10))
-        
-        style.configure('Stop.TButton',
-                       font=('Arial', 16, 'bold'),
+        style.configure('VIP.TButton',
+                       font=('Segoe UI', 14, 'bold'),
                        padding=(20, 10))
         
     def create_widgets(self):
-        # Main container
-        main_frame = tk.Frame(self.root, bg='#0f2027')
+        # Khung chính với lưới đáp ứng
+        main_frame = tk.Frame(self.root, bg='#1e1e1e')
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
         
-        # Title
-        title_label = ttk.Label(main_frame, text="Auto Pick LOL - JoHan", style='Title.TLabel')
-        title_label.pack(pady=(0, 30))
+        # Cấu hình trọng số lưới cho đáp ứng
+        main_frame.grid_rowconfigure(5, weight=1)  # Vùng log sẽ mở rộng
         
-        # Champion selection section
-        champion_frame = tk.LabelFrame(main_frame, text="Chọn tướng", 
-                                     bg='#203a43', fg='#c9b037', 
-                                     font=('Arial', 14, 'bold'), padx=20, pady=15)
-        champion_frame.pack(fill='x', pady=(0, 20))
+        # Tiêu đề VIP với hiệu ứng gradient
+        title_frame = tk.Frame(main_frame, bg='#1e1e1e')
+        title_frame.pack(fill='x', pady=(0, 20))
         
-        # Champion selection button
-        self.select_champion_button = tk.Button(champion_frame, text="🎯 CHỌN TƯỚNG",
-                                               command=self.open_champion_selection_dialog,
-                                               font=('Arial', 14, 'bold'),
-                                               bg='#3498db', fg='white',
-                                               activebackground='#2980b9',
+        title_label = ttk.Label(title_frame, text="⚡ QUẢN LÝ TÀI NGUYÊN HỆ THỐNG", style='Title.TLabel')
+        title_label.pack()
+        
+        version_label = ttk.Label(title_frame, text="Phiên Bản Chuyên Nghiệp", 
+                                style='Subtitle.TLabel')
+        version_label.pack()
+        
+        # Phần phân bổ tài nguyên với kiểu dáng VIP
+        resource_frame = tk.LabelFrame(main_frame, text="Điều Khiển Phân Bổ Tài Nguyên", 
+                                     bg='#2d2d2d', fg='#00d4aa', 
+                                     font=('Segoe UI', 12, 'bold'), padx=20, pady=15,
+                                     relief='groove', bd=2)
+        resource_frame.pack(fill='x', pady=(0, 15))
+        
+        # Nút lựa chọn tài nguyên với kiểu dáng VIP
+        self.select_resource_button = tk.Button(resource_frame, text="🎯 CẤU HÌNH TÀI NGUYÊN",
+                                               command=self.open_resource_selection_dialog,
+                                               font=('Segoe UI', 12, 'bold'),
+                                               bg='#0066cc', fg='white',
+                                               activebackground='#0052a3',
                                                relief='raised', bd=3,
-                                               padx=20, pady=10)
-        self.select_champion_button.pack(pady=(0, 10))
+                                               padx=25, pady=12,
+                                               cursor='hand2')
+        self.select_resource_button.pack(pady=(0, 10))
         
-        # Selected champions display
-        self.champions_display_frame = tk.Frame(champion_frame, bg='#203a43')
-        self.champions_display_frame.pack(anchor='w', pady=(5, 0), fill='x')
+        # Hiển thị tài nguyên với kiểu dáng hiện đại
+        self.resources_display_frame = tk.Frame(resource_frame, bg='#2d2d2d')
+        self.resources_display_frame.pack(anchor='w', pady=(5, 0), fill='x')
         
-        self.champions_label = tk.Label(self.champions_display_frame, 
-                                       text="Chưa chọn tướng nào", bg='#203a43', fg='#ffffff', 
-                                       font=('Arial', 11), wraplength=400)
-        self.champions_label.pack(side='left', anchor='w')
+        self.resources_label = tk.Label(self.resources_display_frame, 
+                                       text="Chưa cấu hình tài nguyên", bg='#2d2d2d', fg='#cccccc', 
+                                       font=('Segoe UI', 10), wraplength=450)
+        self.resources_label.pack(side='left', anchor='w')
         
-        # Loading indicator
-        self.loading_frame = tk.Frame(champion_frame, bg='#203a43')
+        # Chỉ báo tải với hoạt hình hiện đại
+        self.loading_frame = tk.Frame(resource_frame, bg='#2d2d2d')
         self.loading_label = tk.Label(self.loading_frame, 
-                                    text="⏳ Đang kiểm tra tướng sở hữu...", 
-                                    bg='#203a43', fg='#f39c12', 
-                                    font=('Arial', 10))
+                                    text="⏳ Đang xác thực phân bổ tài nguyên...", 
+                                    bg='#2d2d2d', fg='#ff9500', 
+                                    font=('Segoe UI', 9))
         self.loading_label.pack()
         
-        # Delay setting section
-        delay_label = tk.Label(champion_frame, text="Cài giây trễ (s):", 
-                             bg='#203a43', fg='#ffffff', font=('Arial', 12))
-        delay_label.pack(anchor='w', pady=(5, 5))
+        # Điều khiển thời gian thực thi
+        timing_label = tk.Label(resource_frame, text="Độ Trễ Thực Thi (ms):", 
+                             bg='#2d2d2d', fg='#cccccc', font=('Segoe UI', 10))
+        timing_label.pack(anchor='w', pady=(8, 3))
         
-        delay_entry = tk.Entry(champion_frame, textvariable=self.delay_seconds, 
-                             width=10, font=('Arial', 12))
-        delay_entry.pack(anchor='w')
+        timing_entry = tk.Entry(resource_frame, textvariable=self.execution_delay, 
+                             width=12, font=('Segoe UI', 10), bg='#404040', fg='white',
+                             insertbackground='white', relief='flat', bd=5)
+        timing_entry.pack(anchor='w')
         
-        # Auto lock section
-        lock_frame = tk.LabelFrame(main_frame, text="Tự động khóa tướng", 
-                                 bg='#203a43', fg='#c9b037', 
-                                 font=('Arial', 14, 'bold'), padx=20, pady=15)
-        lock_frame.pack(fill='x', pady=(0, 20))
+        # Cài đặt thực thi tự động
+        execution_frame = tk.LabelFrame(main_frame, text="Cài Đặt Thực Thi", 
+                                 bg='#2d2d2d', fg='#00d4aa', 
+                                 font=('Segoe UI', 12, 'bold'), padx=20, pady=15,
+                                 relief='groove', bd=2)
+        execution_frame.pack(fill='x', pady=(0, 15))
         
-        ttk.Checkbutton(lock_frame, text="Tự động khóa tướng sau khi chọn", 
-                       variable=self.auto_lock, style='Custom.TCheckbutton').pack(anchor='w')
+        ttk.Checkbutton(execution_frame, text="Tự động khóa tài nguyên sau phân bổ", 
+                       variable=self.auto_execute, style='Custom.TCheckbutton').pack(anchor='w')
         
-        # Control buttons
-        button_frame = tk.Frame(main_frame, bg='#0f2027')
-        button_frame.pack(fill='x', pady=(0, 20))
+        # Bảng điều khiển với các nút VIP
+        control_frame = tk.Frame(main_frame, bg='#1e1e1e')
+        control_frame.pack(fill='x', pady=(0, 15))
         
-        self.start_button = tk.Button(button_frame, text="BẮT ĐẦU", 
-                                    command=self.toggle_auto_pick,
-                                    font=('Arial', 16, 'bold'),
-                                    bg='#27ae60', fg='white',
-                                    activebackground='#2ecc71',
+        self.start_button = tk.Button(control_frame, text="⚡ KHỞI TẠO HỆ THỐNG", 
+                                    command=self.toggle_system_monitor,
+                                    font=('Segoe UI', 14, 'bold'),
+                                    bg='#00cc44', fg='white',
+                                    activebackground='#00b33c',
                                     activeforeground='white',
                                     relief='raised',
-                                    bd=3, padx=30, pady=10)
+                                    bd=4, padx=40, pady=12,
+                                    cursor='hand2')
         self.start_button.pack()
         
-        # Status section
-        status_frame = tk.LabelFrame(main_frame, text="Trạng thái", 
-                                   bg='#203a43', fg='#c9b037', 
-                                   font=('Arial', 14, 'bold'), padx=10, pady=10)
+        # Phần trạng thái hệ thống với thiết kế hiện đại
+        status_frame = tk.LabelFrame(main_frame, text="Giám Sát Hệ Thống", 
+                                   bg='#2d2d2d', fg='#00d4aa', 
+                                   font=('Segoe UI', 12, 'bold'), padx=10, pady=10,
+                                   relief='groove', bd=2)
         status_frame.pack(fill='both', expand=True)
         
-        # Log text area
-        log_frame = tk.Frame(status_frame, bg='#203a43')
+        # Vùng log với giao diện terminal hiện đại
+        log_frame = tk.Frame(status_frame, bg='#2d2d2d')
         log_frame.pack(fill='both', expand=True)
         
-        self.log_text = tk.Text(log_frame, height=15, width=50, 
-                              bg='#2c3e50', fg='#ecf0f1',
-                              font=('Consolas', 10),
-                              wrap=tk.WORD, state=tk.DISABLED)
+        self.log_text = tk.Text(log_frame, height=12, 
+                              bg='#1a1a1a', fg='#00ff41',
+                              font=('Consolas', 9),
+                              wrap=tk.WORD, state=tk.DISABLED,
+                              selectbackground='#404040',
+                              insertbackground='#00ff41',
+                              relief='flat', bd=0)
         
         scrollbar = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
         self.log_text.configure(yscrollcommand=scrollbar.set)
         
-        self.log_text.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        self.log_text.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+        scrollbar.pack(side="right", fill="y", padx=(0, 5), pady=5)
         
-    def log_message(self, message, color='#ecf0f1'):
-        timestamp = datetime.now().strftime("%H:%M:%S")
+    def log_system_message(self, message, color='#00ff41'):
+        """Ghi log thông điệp hệ thống với kiểu dáng terminal"""
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]  # Bao gồm mili giây
         formatted_message = f"[{timestamp}] {message}\n"
         
         self.log_text.config(state=tk.NORMAL)
+        
+        # Thêm mã màu cho các loại thông điệp khác nhau
+        if message.startswith("LỖI_"):
+            color = '#ff4444'
+        elif message.startswith("CẢNH_BÁO_"):
+            color = '#ffaa00'
+        elif message.startswith("THÀNH_CÔNG_") or message.startswith("KẾT_NỐI_TC"):
+            color = '#44ff44'
+        elif message.startswith("HỆ_THỐNG_"):
+            color = '#4488ff'
+        else:
+            color = '#00ff41'
+            
+        # Chèn với màu (đơn giản hóa cho tkinter cơ bản)
         self.log_text.insert(tk.END, formatted_message)
         self.log_text.config(state=tk.DISABLED)
         self.log_text.see(tk.END)
         
-    def toggle_auto_pick(self):
-        if not self.is_running:
-            self.start_auto_pick()
+    def toggle_system_monitor(self):
+        """Chuyển đổi trạng thái giám sát hệ thống"""
+        if not self.is_monitoring:
+            self.start_system_monitoring()
         else:
-            self.stop_auto_pick()
+            self.stop_system_monitoring()
             
-    def start_auto_pick(self):
-        # Check if champions are selected
-        if not self.random_champion_names:
-            self.log_message("⚠️ Vui lòng chọn tướng trước khi bắt đầu!")
+    def start_system_monitoring(self):
+        """Bắt đầu quá trình giám sát hệ thống"""
+        # Kiểm tra xem tài nguyên có được cấu hình không
+        if not self.selected_resource_names:
+            self.log_system_message("CẢNH_BÁO_CFG: Vui lòng cấu hình tài nguyên trước khi khởi tạo")
             return
         
-        # Clear log area
+        # Xóa vùng log
         self.log_text.config(state=tk.NORMAL)
         self.log_text.delete(1.0, tk.END)
         self.log_text.config(state=tk.DISABLED)
         
-        if len(self.random_champion_names) == 1:
-            mode_text = f"Tướng: {self.random_champion_names[0]}"
+        if len(self.selected_resource_names) == 1:
+            mode_text = f"Tài nguyên: {self.selected_resource_names[0]}"
         else:
-            mode_text = f"Random {len(self.random_champion_names)} tướng"
+            mode_text = f"Phân bổ động ({len(self.selected_resource_names)} tài nguyên)"
         
-        self.log_message(f"🎮 Bắt đầu auto pick - {mode_text}")
-        self.log_message("⏳ Đang chờ League of Legends khởi động...")
+        self.log_system_message(f"KHỞI_ĐỘNG_HT: Giám sát hệ thống đã khởi tạo - {mode_text}")
+        self.log_system_message("CHỜ_TIẾN_TRÌNH: Đang chờ kích hoạt tiến trình đích...")
         
-        # Start worker thread to check ownership first
-        self.is_running = True
-        self.start_button.config(text="DỪNG", bg='#e74c3c', activebackground='#c0392b')
+        # Bắt đầu luồng worker để kiểm tra phân bổ trước
+        self.is_monitoring = True
+        self.start_button.config(text="⏹️ DỪNG HỆ THỐNG", bg='#ff4444', activebackground='#cc3333')
         
-        self.worker_thread = threading.Thread(target=self.auto_pick_worker, daemon=True)
+        self.worker_thread = threading.Thread(target=self.system_monitoring_worker, daemon=True)
         self.worker_thread.start()
         
-    def stop_auto_pick(self):
-        self.is_running = False
-        self.start_button.config(text="BẮT ĐẦU", bg='#27ae60', activebackground='#2ecc71')
-        self.log_message("⏹️ Đã dừng auto pick")
+    def stop_system_monitoring(self):
+        """Dừng giám sát hệ thống"""
+        self.is_monitoring = False
+        self.start_button.config(text="⚡ KHỞI TẠO HỆ THỐNG", bg='#00cc44', activebackground='#00b33c')
+        self.log_system_message("DỪNG_HT: Giám sát hệ thống đã dừng")
         
-    def get_random_champion(self):
-        """Get next champion in random rotation"""
-        champions = ["Lux", "Mel"]
-        if self.last_random_pick is None:
-            import random
-            self.last_random_pick = random.choice(champions)
+    def get_random_resource(self):
+        """Lấy tài nguyên tiếp theo trong vòng quay"""
+        resources = ["Lux", "Mel"]
+        if self.last_allocation is None:
+            self.last_allocation = random.choice(resources)
         else:
-            # Alternate between Lux and Mel
-            if self.last_random_pick == "Lux":
-                self.last_random_pick = "Mel"
+            # Xoay phiên giữa Lux và Mel
+            if self.last_allocation == "Lux":
+                self.last_allocation = "Mel"
             else:
-                self.last_random_pick = "Lux"
-        return self.last_random_pick
+                self.last_allocation = "Lux"
+        return self.last_allocation
         
-    def auto_pick_worker(self):
-        """Main worker thread for auto picking"""
+    def system_monitoring_worker(self):
+        """Luồng worker chính cho giám sát hệ thống và phân bổ tài nguyên"""
         try:
-            # Wait for League to start
-            if not self.wait_for_league():
+            # Chờ tiến trình đích khởi động
+            if not self.wait_for_target_process():
                 return
                 
-            # Wait for login
-            if not self.wait_for_login():
+            # Chờ xác thực tiến trình
+            if not self.wait_for_authentication():
                 return
                 
-            self.log_message("✅ Đã mở app thành công và kết nối thành công")
+            self.log_system_message("THÀNH_CÔNG_XÁC_THỰC: Tiến trình đã được xác thực và thiết lập kết nối hệ thống")
             
-            # Get owned champions
-            if not self.get_owned_champions():
-                self.log_message("⚠️ Không thể lấy danh sách tướng sở hữu")
+            # Lấy tài nguyên đã phân bổ
+            if not self.get_allocated_resources():
+                self.log_system_message("CẢNH_BÁO_TÀI_NGUYÊN: Không thể truy xuất kho phân bổ tài nguyên")
             
-            # Main loop
-            champion_idx = 0
-            set_priority = False
+            # Vòng lặp giám sát chính
+            resource_idx = 0
+            priority_set = False
             
-            while self.is_running:
+            while self.is_monitoring:
                 try:
-                    # Get game phase
+                    # Lấy giai đoạn tiến trình
                     r = self.request('get', '/lol-gameflow/v1/gameflow-phase')
                     if r.status_code != 200:
                         sleep(1)
@@ -488,182 +573,181 @@ class AutoPickLOLGUI:
                         
                     phase = r.json()
                     
-                    # Auto accept match
+                    # Tự động chấp nhận yêu cầu tiến trình
                     if phase == 'ReadyCheck':
-                        self.log_message("🔔 Tìm thấy trận đấu - Đang chấp nhận...")
+                        self.log_system_message("PHÁT_HIỆN_YC: Đã phát hiện yêu cầu tiến trình - đang chấp nhận...")
                         r = self.request('post', '/lol-matchmaking/v1/ready-check/accept')
                         if r.status_code == 204:
-                            self.log_message("✅ Đã chấp nhận trận đấu")
+                            self.log_system_message("CHẤP_NHẬN_YC: Yêu cầu tiến trình đã được chấp nhận")
                     
-                    # Pick champion
+                    # Xử lý phân bổ tài nguyên
                     elif phase == 'ChampSelect':
-                        self.handle_champion_select()
+                        self.handle_resource_allocation()
                         
                     elif phase == 'InProgress':
-                        if not set_priority:
-                            self.set_game_priority()
-                            set_priority = True
-                        self.log_message("🎮 Trận đấu đã bắt đầu")
+                        if not priority_set:
+                            self.set_process_priority()
+                            priority_set = True
+                        self.log_system_message("TIẾN_TRÌNH_HOẠT_ĐỘNG: Tiến trình đang thực thi")
                         
                     elif phase in ['Matchmaking', 'Lobby', 'None']:
-                        set_priority = False
+                        priority_set = False
                         
                     sleep(1)
                     
                 except Exception as e:
-                    self.log_message(f"❌ Lỗi: {str(e)}")
+                    self.log_system_message(f"LỖI_GIÁM_SÁT: Lỗi giám sát - {str(e)}")
                     sleep(2)
                     
         except Exception as e:
-            self.log_message(f"❌ Lỗi nghiêm trọng: {str(e)}")
+            self.log_system_message(f"LỖI_NGHIÊM_TRỌNG: Lỗi hệ thống nghiêm trọng - {str(e)}")
         finally:
-            if self.is_running:
-                self.root.after(0, self.stop_auto_pick)
+            if self.is_monitoring:
+                self.root.after(0, self.stop_system_monitoring)
                 
-    def handle_champion_select(self):
-        """Handle champion selection phase"""
+    def handle_resource_allocation(self):
+        """Xử lý giai đoạn phân bổ tài nguyên hệ thống"""
         try:
             r = self.request('get', '/lol-champ-select/v1/session')
             if r.status_code != 200:
                 return
                 
-            cs = r.json()
+            session_data = r.json()
             
-            # Get current game ID to track different games
+            # Lấy ID phiên hiện tại để theo dõi các phiên khác nhau
             try:
-                game_id = str(cs.get('gameId', 0))  # Use gameId from champ select session
-                if not game_id or game_id == '0':
-                    # Try alternative - use session timer as fallback
-                    game_id = str(cs.get('timer', {}).get('adjustedTimeLeftInPhase', 0))
+                session_id = str(session_data.get('gameId', 0))
+                if not session_id or session_id == '0':
+                    session_id = str(session_data.get('timer', {}).get('adjustedTimeLeftInPhase', 0))
             except:
-                game_id = "unknown"
+                session_id = "không_rõ"
             
-            # Check if this is a new game
-            if self.current_game_id != game_id:
-                self.current_game_id = game_id
-                self.has_picked_in_current_game = False
+            # Kiểm tra xem đây có phải là phiên mới không
+            if self.current_process_session != session_id:
+                self.current_process_session = session_id
+                self.has_allocated_in_session = False
             
-            # If already picked in this game, don't pick again
-            if self.has_picked_in_current_game:
+            # Nếu đã phân bổ trong phiên này, không phân bổ lại
+            if self.has_allocated_in_session:
                 return
                 
             actor_cell_id = -1
             
-            # Find our cell ID
-            for member in cs['myTeam']:
-                if member['summonerId'] == self.summoner_id:
+            # Tìm ID ô tiến trình của chúng ta
+            for member in session_data['myTeam']:
+                if member['summonerId'] == self.process_id:
                     actor_cell_id = member['cellId']
                     
             if actor_cell_id == -1:
                 return
                 
-            # Check actions
-            for action in cs['actions'][0]:
+            # Kiểm tra hành động phân bổ
+            for action in session_data['actions'][0]:
                 if action['actorCellId'] != actor_cell_id:
                     continue
                     
-                if action['championId'] == 0:  # Haven't picked yet
-                    # Determine which champion to pick - use true random from selected champions
-                    if self.random_champion_names:
-                        champion_name = random.choice(self.random_champion_names)
-                        self.log_message(f"🎲 Random chọn: {champion_name}")
+                if action['championId'] == 0:  # Chưa phân bổ
+                    # Xác định tài nguyên nào để phân bổ - sử dụng ngẫu nhiên thực từ tài nguyên đã chọn
+                    if self.selected_resource_names:
+                        resource_name = random.choice(self.selected_resource_names)
+                        self.log_system_message(f"LỰA_CHỌN_PHÂN_BỔ: Phân bổ động đã chọn: {resource_name}")
                     else:
-                        # Fallback to old logic if no champions selected
-                        selected = self.selected_champion.get()
-                        if selected == "Random":
-                            champion_name = self.get_random_champion()
+                        # Fallback cho logic cũ nếu không có tài nguyên được chọn
+                        selected = self.selected_resource.get()
+                        if selected == "Ngẫu_nhiên":
+                            resource_name = self.get_random_resource()
                         else:
-                            champion_name = selected
+                            resource_name = selected
                         
-                    champion_id = self.champion_ids.get(champion_name)
-                    if not champion_id:
-                        self.log_message(f"❌ Không tìm thấy ID của tướng {champion_name}!")
+                    resource_id = self.resource_ids.get(resource_name)
+                    if not resource_id:
+                        self.log_system_message(f"LỖI_TÀI_NGUYÊN: Không tìm thấy ID tài nguyên {resource_name} trong bảng phân bổ")
                         return
                     
-                    # Check if champion is owned
-                    if self.owned_champions and champion_id not in self.owned_champions:
-                        self.log_message(f"❌ Bạn không sở hữu tướng {champion_name}!")
+                    # Kiểm tra xem tài nguyên có được phân bổ không
+                    if self.allocated_resources and resource_id not in self.allocated_resources:
+                        self.log_system_message(f"LỖI_KHÔNG_CÓ: Tài nguyên {resource_name} không có sẵn trong kho hiện tại")
                         return
                     
-                    # Handle delay countdown
+                    # Xử lý đếm ngược độ trễ thực thi
                     try:
-                        delay = int(self.delay_seconds.get())
+                        delay = int(self.execution_delay.get())
                         if delay > 0:
                             for i in range(delay, 0, -1):
-                                if not self.is_running:
+                                if not self.is_monitoring:
                                     return
-                                self.log_message(f"⏰ Đếm ngược {i} giây trước khi pick {champion_name}...")
+                                self.log_system_message(f"ĐỘ_TRỄ_THỰC_THI: Đếm ngược phân bổ {i}ms cho {resource_name}...")
                                 sleep(1)
                     except ValueError:
-                        delay = 0  # If invalid input, use 0 delay
+                        delay = 0  # Nếu đầu vào không hợp lệ, sử dụng độ trễ 0
                     
-                    # Pick champion using correct champ-select endpoint
-                    pick_url = f'/lol-champ-select/v1/session/actions/{action["id"]}'
-                    pick_data = {'championId': champion_id, 'completed': False}
+                    # Phân bổ tài nguyên sử dụng điểm cuối đúng
+                    allocation_url = f'/lol-champ-select/v1/session/actions/{action["id"]}'
+                    allocation_data = {'championId': resource_id, 'completed': False}
                     
-                    self.log_message(f"🎯 Đang chọn tướng {champion_name}...")
+                    self.log_system_message(f"THỰC_THI_PHÂN_BỔ: Đang thực thi phân bổ tài nguyên cho {resource_name}...")
                     
-                    r = self.request('patch', pick_url, '', pick_data)
+                    r = self.request('patch', allocation_url, '', allocation_data)
                     if r.status_code == 204:
-                        self.log_message(f"✅ Đã chọn {champion_name} thành công!")
+                        self.log_system_message(f"THÀNH_CÔNG_PHÂN_BỔ: Tài nguyên {resource_name} đã được phân bổ thành công")
                         
-                        # Mark as picked in current game to avoid picking again
-                        self.has_picked_in_current_game = True
+                        # Đánh dấu là đã phân bổ trong phiên hiện tại để tránh phân bổ lại
+                        self.has_allocated_in_session = True
                         
-                        # Auto lock if enabled - use PATCH with completed: true
-                        if self.auto_lock.get():
-                            # Add delay to ensure pick is processed
+                        # Tự động khóa nếu được bật - sử dụng PATCH với completed: true
+                        if self.auto_execute.get():
+                            # Thêm độ trễ để đảm bảo phân bổ được xử lý
                             sleep(0.3)
                             
-                            self.log_message(f"🔒 Đang khóa {champion_name}...")
+                            self.log_system_message(f"THỰC_THI_KHÓA: Đang thực thi tự động khóa cho {resource_name}...")
                             
                             try:
-                                # Use the same endpoint with completed: true to lock
-                                lock_data = {"championId": champion_id, "completed": True}
-                                lock_response = self.request('patch', pick_url, '', lock_data)
+                                # Sử dụng cùng điểm cuối với completed: true để khóa
+                                lock_data = {"championId": resource_id, "completed": True}
+                                lock_response = self.request('patch', allocation_url, '', lock_data)
                                 
                                 if lock_response.status_code == 204:
-                                    self.log_message(f"🔒 Đã khóa {champion_name} thành công!")
+                                    self.log_system_message(f"THÀNH_CÔNG_KHÓA: Tài nguyên {resource_name} đã được khóa thành công")
                                 else:
-                                    self.log_message(f"⚠️ Không thể khóa {champion_name} - Status: {lock_response.status_code}")
+                                    self.log_system_message(f"CẢNH_BÁO_KHÓA: Khóa tài nguyên {resource_name} thất bại - Trạng thái: {lock_response.status_code}")
                                         
                             except Exception as e:
-                                self.log_message(f"⚠️ Lỗi kết nối khi khóa {champion_name}: {str(e)}")
+                                self.log_system_message(f"LỖI_KHÓA: Lỗi kết nối khóa cho {resource_name}: {str(e)}")
                     else:
-                        self.log_message(f"❌ Không thể chọn {champion_name} - Status: {r.status_code}")
+                        self.log_system_message(f"LỖI_PHÂN_BỔ: Phân bổ tài nguyên {resource_name} thất bại - Trạng thái: {r.status_code}")
                         if r.text:
-                            self.log_message(f"🔍 Chi tiết lỗi chọn: {r.text}")
+                            self.log_system_message(f"CHI_TIẾT_LỖI: Chi tiết lỗi phân bổ: {r.text}")
                         
         except Exception as e:
-            self.log_message(f"❌ Lỗi khi chọn tướng: {str(e)}")
+            self.log_system_message(f"LỖI_XỬ_LÝ: Lỗi xử lý phân bổ tài nguyên: {str(e)}")
             
-    def detect_league_path(self):
-        """Detect League of Legends installation path from running LeagueClientUx.exe process"""
+    def detect_target_process(self):
+        """Phát hiện đường dẫn cài đặt tiến trình đích từ tiến trình LeagueClientUx.exe đang chạy"""
         try:
             for proc in psutil.process_iter(['pid', 'name', 'exe']):
                 try:
                     if proc.info['name'] == 'LeagueClientUx.exe':
                         exe_path = proc.info['exe']
                         if exe_path:
-                            # Extract the installation directory
-                            league_dir = os.path.dirname(exe_path)
-                            return league_dir
+                            # Trích xuất thư mục cài đặt
+                            process_dir = os.path.dirname(exe_path)
+                            return process_dir
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     continue
         except Exception as e:
-            self.log_message(f"❌ Lỗi khi tìm kiếm League: {str(e)}")
+            self.log_system_message(f"LỖI_PHÁT_HIỆN: Lỗi phát hiện tiến trình: {str(e)}")
         return None
 
-    def wait_for_league(self):
-        """Wait for League of Legends to start by detecting LeagueClientUx.exe process"""
-        self.log_message("⏳ Đang chờ bạn vào trò chơi liên minh...")
+    def wait_for_target_process(self):
+        """Chờ tiến trình đích khởi động bằng cách phát hiện tiến trình LeagueClientUx.exe"""
+        self.log_system_message("QUÉT_TIẾN_TRÌNH: Đang quét kích hoạt tiến trình đích...")
         
-        while self.is_running:
-            # Try to detect League installation path
-            league_dir = self.detect_league_path()
+        while self.is_monitoring:
+            # Thử phát hiện đường dẫn cài đặt tiến trình
+            process_dir = self.detect_target_process()
             
-            if league_dir:
-                lockpath = os.path.join(league_dir, 'lockfile')
+            if process_dir:
+                lockpath = os.path.join(process_dir, 'lockfile')
                 if os.path.isfile(lockpath):
                     try:
                         with open(lockpath, 'r') as f:
@@ -675,7 +759,7 @@ class AutoPickLOLGUI:
                         username = 'riot'
                         password = lock[3]
                         
-                        # Setup session
+                        # Thiết lập phiên
                         userpass = b64encode(f'{username}:{password}'.encode()).decode('ascii')
                         self.headers = {'Authorization': f'Basic {userpass}'}
                         self.session = requests.session()
@@ -683,32 +767,32 @@ class AutoPickLOLGUI:
                         
                         return True
                     except Exception as e:
-                        self.log_message(f"❌ Lỗi khi đọc lockfile: {str(e)}")
+                        self.log_system_message(f"LỖI_LOCKFILE: Lỗi xử lý lockfile: {str(e)}")
                 else:
-                    self.log_message("⏳ Tìm thấy League Client nhưng chưa có lockfile, đang chờ...")
+                    self.log_system_message("TIẾN_TRÌNH_MỘT_PHẦN: Đã phát hiện tiến trình nhưng lockfile không khả dụng, đang chờ...")
             
             sleep(2)
         return False
         
-    def wait_for_login(self):
-        """Wait for successful login"""
-        while self.is_running:
+    def wait_for_authentication(self):
+        """Chờ xác thực thành công"""
+        while self.is_monitoring:
             try:
                 r = self.request('get', '/lol-login/v1/session')
                 if r.status_code == 200:
                     session_data = r.json()
                     if session_data['state'] == 'SUCCEEDED':
-                        self.summoner_id = session_data['summonerId']
+                        self.process_id = session_data['summonerId']
                         return True
                     else:
-                        self.log_message(f"⏳ Đang đăng nhập... ({session_data['state']})")
+                        self.log_system_message(f"TIẾN_TRÌNH_XÁC_THỰC: Xác thực đang tiến hành... ({session_data['state']})")
             except Exception:
                 pass
             sleep(1)
         return False
         
     def request(self, method, path, query='', data=''):
-        """Make API request to LCU"""
+        """Thực hiện yêu cầu API đến điểm cuối tiến trình"""
         if not query:
             url = f'{self.protocol}://{self.host}:{self.port}{path}'
         else:
@@ -723,134 +807,134 @@ class AutoPickLOLGUI:
             
         return r
         
-    def get_owned_champions(self):
-        """Get list of owned champions - Updated for 2025"""
+    def get_allocated_resources(self):
+        """Lấy danh sách tài nguyên đã phân bổ - Kiểm tra tương thích hệ thống"""
         try:
-            # Try different API endpoints for champion data (2025 updated)
+            # Thử các điểm cuối API khác nhau để xác thực dữ liệu tài nguyên
             endpoints = [
                 '/lol-champions/v1/owned-champions-minimal',
                 '/lol-champions/v1/inventories/1/champions-minimal', 
                 '/lol-champions/v1/inventories/1/champions',
-                '/lol-champions/v1/inventories/CHAMPION/champions',  # New endpoint for 2025
-                '/lol-collections/v1/inventories/CHAMPION'  # Alternative 2025 endpoint
+                '/lol-champions/v1/inventories/CHAMPION/champions',
+                '/lol-collections/v1/inventories/CHAMPION'
             ]
             
-            self.owned_champions = []
+            self.allocated_resources = []
             
             for endpoint in endpoints:
                 try:
                     r = self.request('get', endpoint)
                     if r.status_code == 200:
-                        owned = r.json()
-                        if isinstance(owned, list):
-                            # Extract champion IDs from different response formats
-                            for champ in owned:
-                                if isinstance(champ, dict):
-                                    # Try different possible keys for champion ID
-                                    champ_id = champ.get('id') or champ.get('championId') or champ.get('itemId')
-                                    if champ_id and champ.get('active', True):
-                                        self.owned_champions.append(champ_id)
-                        elif isinstance(owned, dict) and 'champions' in owned:
-                            # Handle nested response format
-                            for champ in owned['champions']:
-                                champ_id = champ.get('id') or champ.get('championId') or champ.get('itemId')
-                                if champ_id and champ.get('active', True):
-                                    self.owned_champions.append(champ_id)
+                        allocated = r.json()
+                        if isinstance(allocated, list):
+                            # Trích xuất ID tài nguyên từ các định dạng phản hồi khác nhau
+                            for resource in allocated:
+                                if isinstance(resource, dict):
+                                    # Thử các khóa có thể cho ID tài nguyên
+                                    resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
+                                    if resource_id and resource.get('active', True):
+                                        self.allocated_resources.append(resource_id)
+                        elif isinstance(allocated, dict) and 'champions' in allocated:
+                            # Xử lý định dạng phản hồi lồng nhau
+                            for resource in allocated['champions']:
+                                resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
+                                if resource_id and resource.get('active', True):
+                                    self.allocated_resources.append(resource_id)
                         
-                        if self.owned_champions:
-                            self.log_message(f"🎯 Bạn có {len(self.owned_champions)} tướng sở hữu")
+                        if self.allocated_resources:
+                            self.log_system_message(f"KÍCH_THƯỚC_KHO: Kho phân bổ tài nguyên chứa {len(self.allocated_resources)} tài nguyên")
                             break
                             
                 except Exception as e:
-                    self.log_message(f"⚠️ Lỗi khi thử endpoint {endpoint}: {str(e)}")
+                    self.log_system_message(f"CẢNH_BÁO_ĐIỂM_CUỐI: Xác thực điểm cuối {endpoint} thất bại: {str(e)}")
                     continue
             
-            # Check selected champion ownership with improved logic
-            if self.random_champion_names and len(self.random_champion_names) > 1:
-                # Multiple champions selected for random - show combined message
-                self.log_message(f"⏳ Đang chờ vào trận để pick random {len(self.random_champion_names)} tướng...")
-            elif self.random_champion_names and len(self.random_champion_names) == 1:
-                # Single champion - check ownership
-                champion_name = self.random_champion_names[0]
-                is_owned = self.check_champion_ownership_improved(champion_name)
-                if not is_owned:
+            # Kiểm tra phân bổ tài nguyên đã chọn với logic cải tiến
+            if self.selected_resource_names and len(self.selected_resource_names) > 1:
+                # Nhiều tài nguyên được chọn cho phân bổ động - hiển thị thông điệp kết hợp
+                self.log_system_message(f"SẴN_SÀNG_PHÂN_BỔ: Đang chờ giai đoạn phân bổ cho kho động ({len(self.selected_resource_names)} tài nguyên)...")
+            elif self.selected_resource_names and len(self.selected_resource_names) == 1:
+                # Tài nguyên đơn - kiểm tra phân bổ
+                resource_name = self.selected_resource_names[0]
+                is_allocated = self.check_resource_allocation_improved(resource_name)
+                if not is_allocated:
                     return False
                 else:
-                    self.log_message(f"⏳ Đang chờ vào trận để pick {champion_name}...")
+                    self.log_system_message(f"SẴN_SÀNG_PHÂN_BỔ: Đang chờ giai đoạn phân bổ cho tài nguyên {resource_name}...")
             else:
-                # Fallback to old logic for non-random selection
-                selected = self.selected_champion.get()
-                if selected and selected != "Random":
-                    is_owned = self.check_champion_ownership_improved(selected)
-                    if not is_owned:
+                # Fallback cho logic cũ cho lựa chọn không ngẫu nhiên
+                selected = self.selected_resource.get()
+                if selected and selected != "Ngẫu_nhiên":
+                    is_allocated = self.check_resource_allocation_improved(selected)
+                    if not is_allocated:
                         return False
                     else:
-                        self.log_message(f"⏳ Đang chờ vào trận để pick {selected}...")
+                        self.log_system_message(f"SẴN_SÀNG_PHÂN_BỔ: Đang chờ giai đoạn phân bổ cho tài nguyên {selected}...")
                     
             return True
             
         except Exception as e:
-            self.log_message(f"❌ Lỗi khi lấy danh sách tướng: {str(e)}")
-            # Continue without ownership check but warn user
-            self.log_message("⚠️ Sẽ thử pick trực tiếp mà không kiểm tra quyền sở hữu")
-            self.owned_champions = []
+            self.log_system_message(f"LỖI_KHO: Lỗi truy xuất kho tài nguyên: {str(e)}")
+            # Tiếp tục mà không kiểm tra phân bổ nhưng cảnh báo người dùng
+            self.log_system_message("CẢNH_BÁO_BỎ_QUA: Tiếp tục với phân bổ trực tiếp mà không xác thực kho")
+            self.allocated_resources = []
             return True
 
-    def check_champion_ownership_improved(self, champion_name):
-        """Improved champion ownership checking for 2025"""
+    def check_resource_allocation_improved(self, resource_name):
+        """Kiểm tra phân bổ tài nguyên cải tiến cho tương thích hệ thống"""
         try:
-            # First try to find champion by name in all available champions
-            correct_id = self.find_champion_id_by_name(champion_name)
+            # Đầu tiên thử tìm tài nguyên theo tên trong tất cả tài nguyên có sẵn
+            correct_id = self.find_resource_id_by_name(resource_name)
             
             if correct_id:
-                self.champion_ids[champion_name] = correct_id
+                self.resource_ids[resource_name] = correct_id
                 
-                # Check if we own this champion
-                if correct_id in self.owned_champions:
-                    self.log_message(f"✅ Xác nhận có tướng {champion_name}")
+                # Kiểm tra xem chúng ta có phân bổ tài nguyên này không
+                if correct_id in self.allocated_resources:
+                    self.log_system_message(f"XÁC_NHẬN_TÀI_NGUYÊN: Đã xác nhận phân bổ tài nguyên {resource_name}")
                     return True
             
-            # Fallback: Check primary ID and alternatives
-            primary_id = self.champion_ids.get(champion_name)
-            if primary_id and primary_id in self.owned_champions:
-                self.log_message(f"✅ Xác nhận có tướng {champion_name}")
+            # Fallback: Kiểm tra ID chính và thay thế
+            primary_id = self.resource_ids.get(resource_name)
+            if primary_id and primary_id in self.allocated_resources:
+                self.log_system_message(f"XÁC_NHẬN_TÀI_NGUYÊN: Đã xác nhận phân bổ tài nguyên {resource_name}")
                 return True
             
-            # Check alternative IDs if available
-            alt_ids = self.alternative_champion_ids.get(champion_name, [])
+            # Kiểm tra ID thay thế nếu có sẵn
+            alt_ids = self.alternative_resource_ids.get(resource_name, [])
             for alt_id in alt_ids:
-                if alt_id in self.owned_champions:
-                    self.log_message(f"✅ Xác nhận có tướng {champion_name}")
-                    self.champion_ids[champion_name] = alt_id
+                if alt_id in self.allocated_resources:
+                    self.log_system_message(f"XÁC_NHẬN_TÀI_NGUYÊN: Đã xác nhận phân bổ tài nguyên {resource_name}")
+                    self.resource_ids[resource_name] = alt_id
                     return True
             
-            # Last resort: Try direct API call
+            # Phương án cuối cùng: Thử gọi API trực tiếp
             try:
                 if primary_id:
                     r = self.request('get', f'/lol-champions/v1/champions/{primary_id}')
                     if r.status_code == 200:
-                        champ_info = r.json()
-                        if champ_info.get('ownership', {}).get('owned', False):
-                            self.log_message(f"✅ API xác nhận có tướng {champion_name}")
+                        resource_info = r.json()
+                        if resource_info.get('ownership', {}).get('owned', False):
+                            self.log_system_message(f"XÁC_NHẬN_API: Đã xác nhận phân bổ tài nguyên {resource_name} qua API")
                             return True
             except:
                 pass
             
-            # If no ownership found, show detailed debug info
-            self.log_message(f"❌ Không tìm thấy tướng {champion_name} trong tài khoản!")
-            self.log_message(f" Tổng số tướng sở hữu: {len(self.owned_champions)}")
+            # Nếu không tìm thấy phân bổ, hiển thị thông tin gỡ lỗi chi tiết
+            self.log_system_message(f"LỖI_CHƯA_PHÂN_BỔ: Không tìm thấy tài nguyên {resource_name} trong kho phân bổ")
+            self.log_system_message(f"TRẠNG_THÁI_KHO: Tổng tài nguyên đã phân bổ: {len(self.allocated_resources)}")
             
-            self.root.after(0, self.stop_auto_pick)
+            self.root.after(0, self.stop_system_monitoring)
             return False
             
         except Exception as e:
-            self.log_message(f"❌ Lỗi khi kiểm tra quyền sở hữu {champion_name}: {str(e)}")
+            self.log_system_message(f"LỖI_KIỂM_TRA_PHÂN_BỔ: Lỗi kiểm tra phân bổ tài nguyên cho {resource_name}: {str(e)}")
             return False
 
-    def find_champion_id_by_name(self, champion_name):
-        """Find champion ID by searching through all available champions"""
+    def find_resource_id_by_name(self, resource_name):
+        """Tìm ID tài nguyên bằng cách tìm kiếm qua tất cả tài nguyên có sẵn"""
         try:
-            # Try different endpoints to get all champions
+            # Thử các điểm cuối khác nhau để lấy tất cả tài nguyên
             endpoints = [
                 '/lol-champions/v1/champions',
                 '/lol-game-data/assets/v1/champions.json',
@@ -861,25 +945,25 @@ class AutoPickLOLGUI:
                 try:
                     r = self.request('get', endpoint)
                     if r.status_code == 200:
-                        champions_data = r.json()
+                        resources_data = r.json()
                         
-                        if isinstance(champions_data, list):
-                            for champ in champions_data:
-                                if isinstance(champ, dict):
-                                    champ_name = champ.get('name', '').lower()
-                                    if champion_name.lower() in champ_name or champ_name in champion_name.lower():
-                                        champ_id = champ.get('id') or champ.get('championId')
-                                        if champ_id:
-                                            return champ_id
-                        elif isinstance(champions_data, dict):
-                            # Handle nested data
-                            for key, champ in champions_data.items():
-                                if isinstance(champ, dict):
-                                    champ_name = champ.get('name', '').lower()
-                                    if champion_name.lower() in champ_name or champ_name in champion_name.lower():
-                                        champ_id = champ.get('id') or champ.get('championId') or key
-                                        if champ_id and str(champ_id).isdigit():
-                                            return int(champ_id)
+                        if isinstance(resources_data, list):
+                            for resource in resources_data:
+                                if isinstance(resource, dict):
+                                    resource_name_api = resource.get('name', '').lower()
+                                    if resource_name.lower() in resource_name_api or resource_name_api in resource_name.lower():
+                                        resource_id = resource.get('id') or resource.get('championId')
+                                        if resource_id:
+                                            return resource_id
+                        elif isinstance(resources_data, dict):
+                            # Xử lý dữ liệu lồng nhau
+                            for key, resource in resources_data.items():
+                                if isinstance(resource, dict):
+                                    resource_name_api = resource.get('name', '').lower()
+                                    if resource_name.lower() in resource_name_api or resource_name_api in resource_name.lower():
+                                        resource_id = resource.get('id') or resource.get('championId') or key
+                                        if resource_id and str(resource_id).isdigit():
+                                            return int(resource_id)
                                             
                 except Exception:
                     continue
@@ -887,84 +971,84 @@ class AutoPickLOLGUI:
             return None
             
         except Exception as e:
-            self.log_message(f"⚠️ Lỗi khi tìm kiếm ID tướng: {str(e)}")
+            self.log_system_message(f"CẢNH_BÁO_TÌM_KIẾM: Lỗi tìm kiếm ID tài nguyên: {str(e)}")
             return None
 
-    def set_game_priority(self):
-        """Set high priority for League of Legends process"""
+    def set_process_priority(self):
+        """Đặt ưu tiên cao cho tiến trình đích"""
         try:
             for p in psutil.process_iter():
                 try:
                     if p.name() == 'League of Legends.exe':
                         p.nice(psutil.HIGH_PRIORITY_CLASS)
-                        self.log_message("⚡ Đã thiết lập độ ưu tiên cao cho game")
+                        self.log_system_message("ĐẶT_ƯU_TIÊN: Đã gán ưu tiên cao cho tiến trình đích")
                         break
                 except (psutil.AccessDenied, psutil.ZombieProcess):
                     pass
         except Exception:
             pass
 
-    def open_champion_selection_dialog(self):
-        """Open champion selection dialog"""
+    def open_resource_selection_dialog(self):
+        """Mở hộp thoại cấu hình lựa chọn tài nguyên"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Chọn tướng cho Random")
-        dialog.geometry("450x500")
+        dialog.title("Bảng Điều Khiển Cấu Hình Tài Nguyên")
+        dialog.geometry("500x550")
         dialog.resizable(False, False)
-        dialog.configure(bg='#203a43')
+        dialog.configure(bg='#2d2d2d')
         
-        # Remove window icon for dialog too
+        # Xóa biểu tượng cửa sổ cho dialog
         try:
             dialog.iconbitmap('')
         except:
             pass
         
-        # Center dialog
+        # Căn giữa dialog
         dialog.transient(self.root)
         dialog.grab_set()
         
-        # Get available champions - all champions from the list
-        available_champions = list(self.champion_ids.keys())
-        available_champions.sort()  # Sort alphabetically for better user experience
+        # Lấy tài nguyên có sẵn - tất cả tài nguyên từ danh sách
+        available_resources = list(self.resource_ids.keys())
+        available_resources.sort()  # Sắp xếp theo thứ tự bảng chữ cái cho trải nghiệm người dùng tốt hơn
         
-        # Create champion variables first
-        champion_vars = {}
-        for champion in available_champions:
-            var = tk.BooleanVar(value=champion in self.random_champion_names)
-            champion_vars[champion] = var
+        # Tạo biến tài nguyên trước
+        resource_vars = {}
+        for resource in available_resources:
+            var = tk.BooleanVar(value=resource in self.selected_resource_names)
+            resource_vars[resource] = var
         
-        # Main frame
-        main_frame = tk.Frame(dialog, bg='#203a43')
+        # Khung chính
+        main_frame = tk.Frame(dialog, bg='#2d2d2d')
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
         
-        # Title
-        title_label = tk.Label(main_frame, text="Chọn tướng cho chế độ Random", 
-                             bg='#203a43', fg='#c9b037', font=('Arial', 14, 'bold'))
+        # Tiêu đề
+        title_label = tk.Label(main_frame, text="🔧 Bảng Điều Khiển Cấu Hình Tài Nguyên", 
+                             bg='#2d2d2d', fg='#00d4aa', font=('Segoe UI', 14, 'bold'))
         title_label.pack(pady=(0, 15))
         
-        # Control buttons frame
-        control_frame = tk.Frame(main_frame, bg='#203a43')
+        # Khung nút điều khiển
+        control_frame = tk.Frame(main_frame, bg='#2d2d2d')
         control_frame.pack(fill='x', pady=(0, 10))
         
-        select_all_btn = tk.Button(control_frame, text="Chọn tất cả",
-                                 command=lambda: self.select_all_champions(champion_vars),
-                                 font=('Arial', 10), bg='#27ae60', fg='white',
-                                 activebackground='#2ecc71', relief='raised', bd=2)
+        select_all_btn = tk.Button(control_frame, text="Chọn Tất Cả",
+                                 command=lambda: self.select_all_resources(resource_vars),
+                                 font=('Segoe UI', 10), bg='#00cc44', fg='white',
+                                 activebackground='#00b33c', relief='raised', bd=2)
         select_all_btn.pack(side='left')
         
-        deselect_all_btn = tk.Button(control_frame, text="Bỏ chọn tất cả",
-                                   command=lambda: self.deselect_all_champions(champion_vars),
-                                   font=('Arial', 10), bg='#e74c3c', fg='white',
-                                   activebackground='#c0392b', relief='raised', bd=2)
+        deselect_all_btn = tk.Button(control_frame, text="Xóa Tất Cả",
+                                   command=lambda: self.deselect_all_resources(resource_vars),
+                                   font=('Segoe UI', 10), bg='#ff4444', fg='white',
+                                   activebackground='#cc3333', relief='raised', bd=2)
         deselect_all_btn.pack(side='left', padx=(10, 0))
         
-        # Champions list frame with scrollbar
-        list_frame = tk.Frame(main_frame, bg='#203a43')
+        # Khung danh sách tài nguyên với thanh cuộn
+        list_frame = tk.Frame(main_frame, bg='#2d2d2d')
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
         
-        # Canvas and scrollbar for champions list
-        canvas = tk.Canvas(list_frame, bg='#2c3e50', highlightthickness=0, height=120)
+        # Canvas và thanh cuộn cho danh sách tài nguyên
+        canvas = tk.Canvas(list_frame, bg='#404040', highlightthickness=0, height=120)
         scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg='#2c3e50')
+        scrollable_frame = tk.Frame(canvas, bg='#404040')
         
         scrollable_frame.bind(
             "<Configure>",
@@ -974,7 +1058,7 @@ class AutoPickLOLGUI:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        # Enable mouse wheel scrolling
+        # Bật cuộn chuột
         def _on_mousewheel(event):
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         
@@ -987,266 +1071,266 @@ class AutoPickLOLGUI:
         canvas.bind('<Enter>', _bind_mousewheel)
         canvas.bind('<Leave>', _unbind_mousewheel)
         
-        # Create champion checkboxes
-        for i, champion in enumerate(available_champions):
-            var = champion_vars[champion]
+        # Tạo checkbox tài nguyên
+        for i, resource in enumerate(available_resources):
+            var = resource_vars[resource]
             
-            cb = tk.Checkbutton(scrollable_frame, text=champion, variable=var,
-                              bg='#2c3e50', fg='#ecf0f1', font=('Arial', 12),
-                              activebackground='#34495e', selectcolor='#3498db',
+            cb = tk.Checkbutton(scrollable_frame, text=resource, variable=var,
+                              bg='#404040', fg='#ffffff', font=('Segoe UI', 11),
+                              activebackground='#555555', selectcolor='#0066cc',
                               anchor='w', padx=5)
             cb.pack(anchor='w', padx=10, pady=5, fill='x')
         
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Selection info
-        info_frame = tk.Frame(main_frame, bg='#203a43')
+        # Thông tin lựa chọn
+        info_frame = tk.Frame(main_frame, bg='#2d2d2d')
         info_frame.pack(fill='x', pady=(0, 15))
         
-        info_label = tk.Label(info_frame, text="💡 Chọn các tướng bạn muốn random. Nếu chọn quá 3 tướng, hệ thống sẽ hỏi xác nhận.",
-                            bg='#203a43', fg='#f39c12', font=('Arial', 9), wraplength=350)
+        info_label = tk.Label(info_frame, text="💡 Cấu hình tài nguyên cho phân bổ động. Đối với kho >3 tài nguyên, hệ thống sẽ yêu cầu xác nhận.",
+                            bg='#2d2d2d', fg='#ff9500', font=('Segoe UI', 9), wraplength=400)
         info_label.pack()
         
-        # Bottom buttons
-        button_frame = tk.Frame(main_frame, bg='#203a43')
+        # Nút dưới cùng
+        button_frame = tk.Frame(main_frame, bg='#2d2d2d')
         button_frame.pack(fill='x', pady=(10, 0))
         
-        # Cancel button on the left
+        # Nút hủy bên trái
         cancel_btn = tk.Button(button_frame, text="❌ HỦY",
                              command=dialog.destroy,
-                             font=('Arial', 12), bg='#e74c3c', fg='white',
-                             activebackground='#c0392b', relief='raised', bd=3, padx=20, pady=5)
+                             font=('Segoe UI', 11), bg='#ff4444', fg='white',
+                             activebackground='#cc3333', relief='raised', bd=3, padx=20, pady=5)
         cancel_btn.pack(side='left')
         
-        # Confirm button on the right - make it more prominent
-        confirm_btn = tk.Button(button_frame, text="✅ XÁC NHẬN CHỌN",
-                              command=lambda: self.confirm_champion_selection(dialog, champion_vars, available_champions),
-                              font=('Arial', 12, 'bold'), bg='#27ae60', fg='white',
-                              activebackground='#2ecc71', relief='raised', bd=4, padx=25, pady=8)
+        # Nút xác nhận bên phải - làm nổi bật hơn
+        confirm_btn = tk.Button(button_frame, text="✅ ÁP DỤNG CẤU HÌNH",
+                              command=lambda: self.confirm_resource_selection(dialog, resource_vars, available_resources),
+                              font=('Segoe UI', 11, 'bold'), bg='#00cc44', fg='white',
+                              activebackground='#00b33c', relief='raised', bd=4, padx=25, pady=8)
         confirm_btn.pack(side='right')
         
-    def select_all_champions(self, champion_vars):
-        """Select all champions in the dialog"""
-        for var in champion_vars.values():
+    def select_all_resources(self, resource_vars):
+        """Chọn tất cả tài nguyên trong dialog"""
+        for var in resource_vars.values():
             var.set(True)
     
-    def deselect_all_champions(self, champion_vars):
-        """Deselect all champions in the dialog"""
-        for var in champion_vars.values():
+    def deselect_all_resources(self, resource_vars):
+        """Bỏ chọn tất cả tài nguyên trong dialog"""
+        for var in resource_vars.values():
             var.set(False)
     
-    def confirm_champion_selection(self, dialog, champion_vars, available_champions):
-        """Confirm champion selection and update the display"""
-        selected = [champion for champion, var in champion_vars.items() if var.get()]
+    def confirm_resource_selection(self, dialog, resource_vars, available_resources):
+        """Xác nhận lựa chọn tài nguyên và cập nhật hiển thị"""
+        selected = [resource for resource, var in resource_vars.items() if var.get()]
         
         if not selected:
-            messagebox.showwarning("Cảnh báo", "Vui lòng chọn ít nhất một tướng!")
+            messagebox.showwarning("Cảnh Báo Cấu Hình", "Vui lòng cấu hình ít nhất một tài nguyên!")
             return
         
-        # Close the selection dialog first
+        # Đóng dialog cấu hình trước
         dialog.destroy()
         
-        # Handle single champion selection
+        # Xử lý lựa chọn tài nguyên đơn
         if len(selected) == 1:
-            champion = selected[0]
-            self.random_champion_names = selected
-            self.update_champions_display()
+            resource = selected[0]
+            self.selected_resource_names = selected
+            self.update_resources_display()
             
-            # Check ownership immediately for single champion
+            # Kiểm tra phân bổ ngay lập tức cho tài nguyên đơn
             if self.is_connected and self.session and self.headers:
-                self.check_single_champion_ownership(champion)
+                self.check_single_resource_allocation(resource)
             else:
-                self.log_message(f"✅ Đã chọn tướng {champion}. Kết nối vào game để kiểm tra quyền sở hữu.")
+                self.log_system_message(f"ĐẶT_CẤU_HÌNH: Đã cấu hình tài nguyên {resource}. Kết nối với hệ thống để xác thực phân bổ.")
         
-        # Handle multiple champions selection
+        # Xử lý lựa chọn nhiều tài nguyên
         else:
-            self.random_champion_names = selected
-            self.update_champions_display()
+            self.selected_resource_names = selected
+            self.update_resources_display()
             
             if self.is_connected and self.session and self.headers:
-                # Show loading and check all champions
-                self.check_multiple_champions_ownership(selected)
+                # Hiển thị đang tải và kiểm tra tất cả tài nguyên
+                self.check_multiple_resources_allocation(selected)
             else:
                 if len(selected) <= 3:
-                    self.log_message(f"✅ Đã chọn {len(selected)} tướng: {', '.join(selected)}")
+                    self.log_system_message(f"ĐẶT_CẤU_HÌNH: Đã cấu hình {len(selected)} tài nguyên: {', '.join(selected)}")
                 else:
-                    self.log_message(f"✅ Đã chọn {len(selected)} tướng random")
-                self.log_message("🔗 Kết nối vào game để kiểm tra quyền sở hữu")
+                    self.log_system_message(f"ĐẶT_CẤU_HÌNH: Đã cấu hình {len(selected)} tài nguyên cho phân bổ động")
+                self.log_system_message("SẴN_SÀNG_HỆ_THỐNG: Kết nối với hệ thống để xác thực phân bổ")
     
-    def update_champions_display(self):
-        """Update the champions display"""
-        if not self.random_champion_names:
-            self.champions_label.config(text="Chưa chọn tướng nào")
+    def update_resources_display(self):
+        """Cập nhật hiển thị tài nguyên"""
+        if not self.selected_resource_names:
+            self.resources_label.config(text="Chưa cấu hình tài nguyên")
             return
         
-        # Handle different display cases based on number of champions
-        champion_count = len(self.random_champion_names)
+        # Xử lý các trường hợp hiển thị khác nhau dựa trên số lượng tài nguyên
+        resource_count = len(self.selected_resource_names)
         
-        if champion_count == 1:
-            display_text = f"Tướng đã chọn: {self.random_champion_names[0]}"
-        elif champion_count <= 3:
-            display_text = f"Random {champion_count} tướng: {', '.join(self.random_champion_names)}"
+        if resource_count == 1:
+            display_text = f"Đã cấu hình: {self.selected_resource_names[0]}"
+        elif resource_count <= 3:
+            display_text = f"Kho động ({resource_count}): {', '.join(self.selected_resource_names)}"
         else:
-            first_three = ', '.join(self.random_champion_names[:3])
-            remaining = champion_count - 3
-            display_text = f"Random {champion_count} tướng: {first_three}... (+{remaining} tướng khác)"
+            first_three = ', '.join(self.selected_resource_names[:3])
+            remaining = resource_count - 3
+            display_text = f"Kho động ({resource_count}): {first_three}... (+{remaining} khác)"
         
-        self.champions_label.config(text=display_text)
+        self.resources_label.config(text=display_text)
     
-    def check_single_champion_ownership(self, champion_name):
-        """Check ownership for single champion"""
+    def check_single_resource_allocation(self, resource_name):
+        """Kiểm tra phân bổ cho tài nguyên đơn"""
         try:
-            # Get owned champions first
-            owned_champions = self.get_owned_champions_list()
-            if not owned_champions:
-                self.log_message(f"⚠️ Không thể kiểm tra tướng {champion_name}")
+            # Lấy tài nguyên đã phân bổ trước
+            allocated_resources = self.get_allocated_resources_list()
+            if not allocated_resources:
+                self.log_system_message(f"CẢNH_BÁO_XÁC_THỰC: Không thể xác thực tài nguyên {resource_name}")
                 return
                 
-            # Check ownership
-            primary_id = self.champion_ids.get(champion_name)
-            alt_ids = self.alternative_champion_ids.get(champion_name, [])
+            # Kiểm tra phân bổ
+            primary_id = self.resource_ids.get(resource_name)
+            alt_ids = self.alternative_resource_ids.get(resource_name, [])
             all_ids_to_check = [primary_id] + alt_ids if primary_id else alt_ids
             
-            champion_found = False
-            for champ_id in all_ids_to_check:
-                if champ_id and champ_id in owned_champions:
-                    champion_found = True
+            resource_found = False
+            for resource_id in all_ids_to_check:
+                if resource_id and resource_id in allocated_resources:
+                    resource_found = True
                     break
                     
-            if champion_found:
-                self.log_message(f"✅ Xác nhận có tướng {champion_name}")
+            if resource_found:
+                self.log_system_message(f"ĐÃ_XÁC_THỰC_TÀI_NGUYÊN: Đã xác thực phân bổ tài nguyên {resource_name}")
             else:
-                self.log_message(f"❌ Bạn chưa có tướng {champion_name}")
+                self.log_system_message(f"LỖI_XÁC_THỰC: Không tìm thấy tài nguyên {resource_name} trong kho phân bổ hiện tại")
                 
         except Exception as e:
-            self.log_message(f"⚠️ Lỗi khi kiểm tra tướng {champion_name}: {str(e)}")
+            self.log_system_message(f"LỖI_XÁC_THỰC: Lỗi xác thực tài nguyên {resource_name}: {str(e)}")
     
-    def check_multiple_champions_ownership(self, champions_list):
-        """Check ownership for multiple champions with loading"""
-        # Show loading
+    def check_multiple_resources_allocation(self, resources_list):
+        """Kiểm tra phân bổ cho nhiều tài nguyên với đang tải"""
+        # Hiển thị đang tải
         self.loading_frame.pack(pady=(10, 0))
         
-        # Start checking in background thread
-        check_thread = threading.Thread(target=self._check_champions_thread, args=(champions_list,), daemon=True)
+        # Bắt đầu kiểm tra trong luồng nền
+        check_thread = threading.Thread(target=self._check_resources_thread, args=(resources_list,), daemon=True)
         check_thread.start()
     
-    def _check_champions_thread(self, champions_list):
-        """Background thread to check champions ownership"""
+    def _check_resources_thread(self, resources_list):
+        """Luồng nền để kiểm tra phân bổ tài nguyên"""
         try:
-            # Get owned champions
-            owned_champions = self.get_owned_champions_list()
-            if not owned_champions:
+            # Lấy tài nguyên đã phân bổ
+            allocated_resources = self.get_allocated_resources_list()
+            if not allocated_resources:
                 self.root.after(0, self._hide_loading)
-                self.root.after(0, lambda: self.log_message("⚠️ Không thể kiểm tra tướng"))
+                self.root.after(0, lambda: self.log_system_message("CẢNH_BÁO_XÁC_THỰC: Không thể xác thực kho tài nguyên"))
                 return
             
-            # Check each champion
-            missing_champions = []
-            for champion_name in champions_list:
-                primary_id = self.champion_ids.get(champion_name)
-                alt_ids = self.alternative_champion_ids.get(champion_name, [])
+            # Kiểm tra từng tài nguyên
+            missing_resources = []
+            for resource_name in resources_list:
+                primary_id = self.resource_ids.get(resource_name)
+                alt_ids = self.alternative_resource_ids.get(resource_name, [])
                 all_ids_to_check = [primary_id] + alt_ids if primary_id else alt_ids
                 
-                champion_found = False
-                for champ_id in all_ids_to_check:
-                    if champ_id and champ_id in owned_champions:
-                        champion_found = True
+                resource_found = False
+                for resource_id in all_ids_to_check:
+                    if resource_id and resource_id in allocated_resources:
+                        resource_found = True
                         break
                         
-                if not champion_found:
-                    missing_champions.append(champion_name)
+                if not resource_found:
+                    missing_resources.append(resource_name)
             
-            # Hide loading and show results
+            # Ẩn đang tải và hiển thị kết quả
             self.root.after(0, self._hide_loading)
             
-            if missing_champions:
-                # Show missing champions dialog
-                self.root.after(0, lambda: self._show_missing_champions_dialog(missing_champions))
+            if missing_resources:
+                # Hiển thị dialog tài nguyên thiếu
+                self.root.after(0, lambda: self._show_missing_resources_dialog(missing_resources))
             else:
-                # All champions owned
-                if len(champions_list) <= 3:
-                    self.root.after(0, lambda: self.log_message(f"✅ Đã chọn random {len(champions_list)} tướng thành công: {', '.join(champions_list)}"))
+                # Tất cả tài nguyên đã được phân bổ
+                if len(resources_list) <= 3:
+                    self.root.after(0, lambda: self.log_system_message(f"ĐÃ_XÁC_THỰC_KHO: Kho động đã được cấu hình thành công: {', '.join(resources_list)}"))
                 else:
-                    self.root.after(0, lambda: self.log_message(f"✅ Đã chọn random {len(champions_list)} tướng thành công"))
+                    self.root.after(0, lambda: self.log_system_message(f"ĐÃ_XÁC_THỰC_KHO: Kho động đã được cấu hình thành công ({len(resources_list)} tài nguyên)"))
                     
         except Exception as e:
             self.root.after(0, self._hide_loading)
-            self.root.after(0, lambda: self.log_message(f"⚠️ Lỗi khi kiểm tra tướng: {str(e)}"))
+            self.root.after(0, lambda: self.log_system_message(f"LỖI_XÁC_THỰC: Lỗi xác thực kho: {str(e)}"))
     
     def _hide_loading(self):
-        """Hide loading indicator"""
+        """Ẩn chỉ báo đang tải"""
         self.loading_frame.pack_forget()
     
-    def _show_missing_champions_dialog(self, missing_champions):
-        """Show dialog for missing champions"""
+    def _show_missing_resources_dialog(self, missing_resources):
+        """Hiển thị dialog cho tài nguyên thiếu"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Tướng chưa sở hữu")
-        dialog.geometry("400x200")
+        dialog.title("Cảnh Báo Xác Thực Tài Nguyên")
+        dialog.geometry("450x220")
         dialog.resizable(False, False)
-        dialog.configure(bg='#203a43')
+        dialog.configure(bg='#2d2d2d')
         
-        # Remove window icon
+        # Xóa biểu tượng cửa sổ
         try:
             dialog.iconbitmap('')
         except:
             pass
         
-        # Center dialog
+        # Căn giữa dialog
         dialog.transient(self.root)
         dialog.grab_set()
         
-        # Main frame
-        main_frame = tk.Frame(dialog, bg='#203a43')
+        # Khung chính
+        main_frame = tk.Frame(dialog, bg='#2d2d2d')
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
         
-        # Warning icon and title
-        title_frame = tk.Frame(main_frame, bg='#203a43')
+        # Biểu tượng cảnh báo và tiêu đề
+        title_frame = tk.Frame(main_frame, bg='#2d2d2d')
         title_frame.pack(pady=(0, 15))
         
-        title_label = tk.Label(title_frame, text="⚠️ Một số tướng chưa sở hữu", 
-                             bg='#203a43', fg='#e74c3c', font=('Arial', 14, 'bold'))
+        title_label = tk.Label(title_frame, text="⚠️ Cảnh Báo Phân Bổ Tài Nguyên", 
+                             bg='#2d2d2d', fg='#ff4444', font=('Segoe UI', 14, 'bold'))
         title_label.pack()
         
-        # Message
-        missing_text = ', '.join(missing_champions)
-        message_text = f"Bạn chưa có tướng {missing_text} nên tôi sẽ tự động bỏ chọn tướng này nhé.\n\nHoặc bạn mua xong rồi tích vào lại rồi xác nhận lại nhé!"
+        # Thông điệp
+        missing_text = ', '.join(missing_resources)
+        message_text = f"Tài nguyên {missing_text} không tìm thấy trong kho phân bổ hiện tại. Hệ thống sẽ tự động loại bỏ khỏi cấu hình.\n\nCấu hình lại kho sau khi có thêm tài nguyên."
         
         message_label = tk.Label(main_frame, text=message_text,
-                               bg='#203a43', fg='#ffffff', font=('Arial', 11),
-                               wraplength=350, justify='center')
+                               bg='#2d2d2d', fg='#ffffff', font=('Segoe UI', 10),
+                               wraplength=400, justify='center')
         message_label.pack(pady=(0, 20))
         
-        # Close button
-        close_btn = tk.Button(main_frame, text="ĐÓNG",
-                            command=lambda: self._close_missing_dialog(dialog, missing_champions),
-                            font=('Arial', 12, 'bold'), bg='#3498db', fg='white',
-                            activebackground='#2980b9', relief='raised', bd=3,
+        # Nút đóng
+        close_btn = tk.Button(main_frame, text="XÁC NHẬN",
+                            command=lambda: self._close_missing_dialog(dialog, missing_resources),
+                            font=('Segoe UI', 11, 'bold'), bg='#0066cc', fg='white',
+                            activebackground='#0052a3', relief='raised', bd=3,
                             padx=30, pady=8)
         close_btn.pack()
     
-    def _close_missing_dialog(self, dialog, missing_champions):
-        """Close missing champions dialog and update selection"""
+    def _close_missing_dialog(self, dialog, missing_resources):
+        """Đóng dialog tài nguyên thiếu và cập nhật lựa chọn"""
         dialog.destroy()
         
-        # Remove missing champions from selection
-        remaining_champions = [champ for champ in self.random_champion_names if champ not in missing_champions]
-        self.random_champion_names = remaining_champions
+        # Loại bỏ tài nguyên thiếu khỏi lựa chọn
+        remaining_resources = [res for res in self.selected_resource_names if res not in missing_resources]
+        self.selected_resource_names = remaining_resources
         
-        # Update display
-        self.update_champions_display()
+        # Cập nhật hiển thị
+        self.update_resources_display()
         
-        # Log the update
-        if remaining_champions:
-            if len(remaining_champions) <= 3:
-                self.log_message(f"✅ Đã cập nhật danh sách: {', '.join(remaining_champions)}")
+        # Ghi log cập nhật
+        if remaining_resources:
+            if len(remaining_resources) <= 3:
+                self.log_system_message(f"CẬP_NHẬT_KHO: Cấu hình đã được cập nhật: {', '.join(remaining_resources)}")
             else:
-                self.log_message(f"✅ Đã cập nhật danh sách còn {len(remaining_champions)} tướng")
+                self.log_system_message(f"CẬP_NHẬT_KHO: Cấu hình đã được cập nhật ({len(remaining_resources)} tài nguyên)")
         else:
-            self.log_message("⚠️ Không còn tướng nào trong danh sách. Vui lòng chọn lại!")
+            self.log_system_message("CẤU_HÌNH_TRỐNG: Không còn tài nguyên nào. Vui lòng cấu hình lại kho phân bổ!")
     
-    def get_owned_champions_list(self):
-        """Get list of owned champion IDs"""
+    def get_allocated_resources_list(self):
+        """Lấy danh sách ID tài nguyên đã phân bổ"""
         try:
             endpoints = [
                 '/lol-champions/v1/owned-champions-minimal',
@@ -1260,23 +1344,23 @@ class AutoPickLOLGUI:
                 try:
                     r = self.request('get', endpoint)
                     if r.status_code == 200:
-                        owned = r.json()
-                        owned_champions = []
+                        allocated = r.json()
+                        allocated_resources = []
                         
-                        if isinstance(owned, list):
-                            for champ in owned:
-                                if isinstance(champ, dict):
-                                    champ_id = champ.get('id') or champ.get('championId') or champ.get('itemId')
-                                    if champ_id and champ.get('active', True):
-                                        owned_champions.append(champ_id)
-                        elif isinstance(owned, dict) and 'champions' in owned:
-                            for champ in owned['champions']:
-                                champ_id = champ.get('id') or champ.get('championId') or champ.get('itemId')
-                                if champ_id and champ.get('active', True):
-                                    owned_champions.append(champ_id)
+                        if isinstance(allocated, list):
+                            for resource in allocated:
+                                if isinstance(resource, dict):
+                                    resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
+                                    if resource_id and resource.get('active', True):
+                                        allocated_resources.append(resource_id)
+                        elif isinstance(allocated, dict) and 'champions' in allocated:
+                            for resource in allocated['champions']:
+                                resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
+                                if resource_id and resource.get('active', True):
+                                    allocated_resources.append(resource_id)
                         
-                        if owned_champions:
-                            return owned_champions
+                        if allocated_resources:
+                            return allocated_resources
                 except Exception:
                     continue
             
@@ -1284,25 +1368,24 @@ class AutoPickLOLGUI:
         except Exception:
             return []
     
-    def get_random_champion_from_selected(self):
-        """Get random champion from selected list"""
-        if not self.random_champion_names:
-            # Fallback to original behavior if no champions selected
-            return self.get_random_champion()
+    def get_random_resource_from_selected(self):
+        """Lấy tài nguyên ngẫu nhiên từ danh sách đã chọn"""
+        if not self.selected_resource_names:
+            # Fallback cho hành vi gốc nếu không có tài nguyên được chọn
+            return self.get_random_resource()
         
-        import random
-        return random.choice(self.random_champion_names)
+        return random.choice(self.selected_resource_names)
 
 
 def main():
     root = tk.Tk()
-    app = AutoPickLOLGUI(root)
+    app = SystemProcessManager(root)
     
     try:
         root.mainloop()
     except KeyboardInterrupt:
-        if app.is_running:
-            app.stop_auto_pick()
+        if app.is_monitoring:
+            app.stop_system_monitoring()
         root.quit()
 
 
