@@ -571,12 +571,9 @@ class SystemProcessManager:
                         
                     phase = r.json()
                     
-                    # Tự động chấp nhận yêu cầu tiến trình
+                    # Chỉ thông báo khi phát hiện yêu cầu tiến trình, không tự động chấp nhận
                     if phase == 'ReadyCheck':
-                        self.log_system_message("PHÁT_HIỆN_YC: Đã phát hiện yêu cầu tiến trình - đang chấp nhận...")
-                        r = self.request('post', '/lol-matchmaking/v1/ready-check/accept')
-                        if r.status_code == 204:
-                            self.log_system_message("CHẤP_NHẬN_YC: Yêu cầu tiến trình đã được chấp nhận")
+                        self.log_system_message("Ô Đồny ý Hay Không Đây-.-")
                     
                     # Xử lý phân bổ tài nguyên
                     elif phase == 'ChampSelect':
