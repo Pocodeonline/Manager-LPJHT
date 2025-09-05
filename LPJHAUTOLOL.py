@@ -38,48 +38,71 @@ class SystemProcessManager:
         
         # Dữ liệu phân bổ tài nguyên - ID tiến trình ánh xạ tên tướng chuẩn theo Riot API
         self.system_resources = {
-            "99": "1",             # từ ví dụ trước là TàiNguyênA
-            "800": "2",
-            "54": "3",
-            "84": "4",
-            "53": "5",
-            "245": "6",
-            "3": "7",
-            "555": "8",
-            "254": "9",
-            "234": "10",
-            "134": "11",
-            "517": "12",
-            "59": "13",
-            "12": "14",
-            "64": "15",
-            "7": "16",
-            "110": "17",
-            "121": "18",
-            "105": "19",
-            "126": "20"
+            "233": "1",   # Briar
+            "950": "2",   # Naafiri
+            "777": "3",   # Yone
+            "246": "4",   # Qiyana
+            "517": "5",   # Sylas
+            "84": "6",    # Akali
+            "105": "7",   # Fizz
+            "142": "8",   # Zoe
+            "136": "9",   # Aurelion Sol
+            "53": "10",   # Blitzcrank
+            "31": "11",   # Cho'Gath
+            "42": "12",   # Corki
+            "28": "13",   # Evelynn
+            "104": "14",  # Graves
+            "59": "15",   # Jarvan IV
+            "99": "16",   # Lux
+            "54": "17",   # Malphite
+            "64": "18",   # Lee Sin
+            "35": "19",   # Shaco
+            "91": "20",   # Talon
+            "800": "21",  # Mel
+            "3": "22",    # Galio
+            "887": "23",  # Gwen
+            "34": "24",   # Anivia
+            "76": "25",   # Nidalee
+            "90": "26",   # Malzahar
+            "895": "27",  # Nilah
+            "98": "28",   # Shen
+            "14": "29",   # Sion
+            "15": "30",   # Sivir
+            "804": "31"   # Yunara
         }
+
         self.resource_ids = {
-            "1": 99,
-            "2": 800,
-            "3": 54,
-            "4": 84,
-            "5": 53,
-            "6": 245,
-            "7": 3,
-            "8": 555,
-            "9": 254,
-            "10": 234,
-            "11": 134,
-            "12": 517,
-            "13": 59,
-            "14": 12,
-            "15": 64,
-            "16": 7,
-            "17": 110,
-            "18": 121,
-            "19": 105,
-            "20": 126
+            "1": 233,   # Briar
+            "2": 950,   # Naafiri
+            "3": 777,   # Yone
+            "4": 246,   # Qiyana
+            "5": 517,   # Sylas
+            "6": 84,    # Akali
+            "7": 105,   # Fizz
+            "8": 142,   # Zoe
+            "9": 136,   # Aurelion Sol
+            "10": 53,   # Blitzcrank
+            "11": 31,   # Cho'Gath
+            "12": 42,   # Corki
+            "13": 28,   # Evelynn
+            "14": 104,  # Graves
+            "15": 59,   # Jarvan IV
+            "16": 99,   # Lux
+            "17": 54,   # Malphite
+            "18": 64,   # Lee Sin
+            "19": 35,   # Shaco
+            "20": 91,   # Talon
+            "21": 800,  # Mel
+            "22": 3,    # Galio
+            "23": 887,  # Gwen
+            "24": 34,   # Anivia
+            "25": 76,   # Nidalee
+            "26": 90,   # Malzahar
+            "27": 895,  # Nilah
+            "28": 98,   # Shen
+            "29": 14,   # Sion
+            "30": 15,   # Sivir
+            "31": 804   # Yunara
         }
         self.allocated_resources = []
         
