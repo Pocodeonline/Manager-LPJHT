@@ -68,7 +68,17 @@ class SystemProcessManager:
             "98": "28",   # Shen
             "14": "29",   # Sion
             "15": "30",   # Sivir
-            "804": "31"   # Yunara
+            "804": "31",  # Yunara
+            "523": "32",  # Aphelios
+            "268": "33",  # Azir
+            "200": "34",  # Bel'Veth
+            "63": "35",   # Brand
+            "910": "36",  # Hwei
+            "115": "37",  # Ziggs
+            "143": "38",  # Zyra
+            "888": "39",  # Renata
+            "75": "40",   # Nasus
+            "420": "41"   # Illaoi
         }
 
         self.resource_ids = {
@@ -102,8 +112,19 @@ class SystemProcessManager:
             "28": 98,   # Shen
             "29": 14,   # Sion
             "30": 15,   # Sivir
-            "31": 804   # Yunara
+            "31": 804,  # Yunara
+            "32": 523,  # Aphelios
+            "33": 268,  # Azir
+            "34": 200,  # Bel'Veth
+            "35": 63,   # Brand
+            "36": 910,  # Hwei
+            "37": 115,  # Ziggs
+            "38": 143,  # Zyra
+            "39": 888,  # Renata
+            "40": 75,   # Nasus
+            "41": 420   # Illaoi
         }
+
         self.allocated_resources = []
         
         # Nếu cần ID thay thế (ví dụ: skin khác, phiên bản khác)
