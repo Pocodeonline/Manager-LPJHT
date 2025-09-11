@@ -1,6 +1,6 @@
 ###############################################################################
-# Trình Giám Sát Tiến Trình & Quản Lý Tài Nguyên Nâng Cao
-# Giao diện tiện ích hệ thống chuyên nghiệp
+# Professional Stock Trading Platform
+# Advanced Portfolio Management & Trading Interface
 ###############################################################################
 
 import tkinter as tk
@@ -18,7 +18,7 @@ import win32process
 import random
 from datetime import datetime
 
-class SystemProcessManager:
+class StockTradingPlatform:
     def __init__(self, root):
         self.root = root
         self.setup_window()
@@ -26,150 +26,150 @@ class SystemProcessManager:
         self.setup_styles()
         self.create_widgets()
         
-        # Biến kết nối tiến trình
-        self.is_monitoring = False
+        # Trading connection variables
+        self.is_trading_active = False
         self.session = None
         self.headers = None
         self.protocol = None
         self.host = '127.0.0.1'
         self.port = None
-        self.process_id = None
+        self.trader_id = None
         self.worker_thread = None
         
-        # Dữ liệu phân bổ tài nguyên - ID tiến trình ánh xạ tên tướng chuẩn theo Riot API
-        self.system_resources = {
-            "233": "1",   # Briar
-            "950": "2",   # Naafiri
-            "777": "3",   # Yone
-            "246": "4",   # Qiyana
-            "517": "5",   # Sylas
-            "84": "6",    # Akali
-            "105": "7",   # Fizz
-            "142": "8",   # Zoe
-            "136": "9",   # Aurelion Sol
-            "53": "10",   # Blitzcrank
-            "31": "11",   # Cho'Gath
-            "42": "12",   # Corki
-            "28": "13",   # Evelynn
-            "104": "14",  # Graves
-            "59": "15",   # Jarvan IV
-            "99": "16",   # Lux
-            "54": "17",   # Malphite
-            "64": "18",   # Lee Sin
-            "35": "19",   # Shaco
-            "91": "20",   # Talon
-            "800": "21",  # Mel
-            "3": "22",    # Galio
-            "887": "23",  # Gwen
-            "34": "24",   # Anivia
-            "76": "25",   # Nidalee
-            "90": "26",   # Malzahar
-            "895": "27",  # Nilah
-            "98": "28",   # Shen
-            "14": "29",   # Sion
-            "15": "30",   # Sivir
-            "804": "31",  # Yunara
-            "523": "32",  # Aphelios
-            "268": "33",  # Azir
-            "200": "34",  # Bel'Veth
-            "63": "35",   # Brand
-            "910": "36",  # Hwei
-            "115": "37",  # Ziggs
-            "143": "38",  # Zyra
-            "888": "39",  # Renata
-            "75": "40",   # Nasus
-            "420": "41"   # Illaoi
+        # Stock portfolio mapping - Stock symbols to internal IDs
+        self.stock_portfolio = {
+            "233": "AAPL",   # Apple
+            "950": "MSFT",   # Microsoft
+            "777": "GOOGL",  # Google
+            "246": "AMZN",   # Amazon
+            "517": "TSLA",   # Tesla
+            "84": "NVDA",    # NVIDIA
+            "105": "META",   # Meta
+            "142": "NFLX",   # Netflix
+            "136": "AMD",    # AMD
+            "53": "INTC",    # Intel
+            "31": "ORCL",    # Oracle
+            "42": "CRM",     # Salesforce
+            "28": "ADBE",    # Adobe
+            "104": "PYPL",   # PayPal
+            "59": "UBER",    # Uber
+            "99": "SPOT",    # Spotify
+            "54": "SQ",      # Block
+            "64": "SHOP",    # Shopify
+            "35": "COIN",    # Coinbase
+            "91": "RBLX",    # Roblox
+            "800": "AI",     # C3.ai
+            "3": "IBM",      # IBM
+            "887": "PLTR",   # Palantir
+            "34": "SNOW",    # Snowflake
+            "76": "ZM",      # Zoom
+            "90": "DOCU",    # DocuSign
+            "895": "CRWD",   # CrowdStrike
+            "98": "OKTA",    # Okta
+            "14": "TWLO",    # Twilio
+            "15": "DDOG",    # Datadog
+            "804": "NET",    # Cloudflare
+            "523": "MDB",    # MongoDB
+            "268": "WDAY",   # Workday
+            "200": "NOW",    # ServiceNow
+            "63": "TEAM",    # Atlassian
+            "910": "PANW",   # Palo Alto
+            "115": "ZS",     # Zscaler
+            "143": "VEEV",   # Veeva
+            "888": "ESTC",   # Elastic
+            "75": "SPLK",    # Splunk
+            "420": "FIVN"    # Five9
         }
 
-        self.resource_ids = {
-            "1": 233,   # Briar
-            "2": 950,   # Naafiri
-            "3": 777,   # Yone
-            "4": 246,   # Qiyana
-            "5": 517,   # Sylas
-            "6": 84,    # Akali
-            "7": 105,   # Fizz
-            "8": 142,   # Zoe
-            "9": 136,   # Aurelion Sol
-            "10": 53,   # Blitzcrank
-            "11": 31,   # Cho'Gath
-            "12": 42,   # Corki
-            "13": 28,   # Evelynn
-            "14": 104,  # Graves
-            "15": 59,   # Jarvan IV
-            "16": 99,   # Lux
-            "17": 54,   # Malphite
-            "18": 64,   # Lee Sin
-            "19": 35,   # Shaco
-            "20": 91,   # Talon
-            "21": 800,  # Mel
-            "22": 3,    # Galio
-            "23": 887,  # Gwen
-            "24": 34,   # Anivia
-            "25": 76,   # Nidalee
-            "26": 90,   # Malzahar
-            "27": 895,  # Nilah
-            "28": 98,   # Shen
-            "29": 14,   # Sion
-            "30": 15,   # Sivir
-            "31": 804,  # Yunara
-            "32": 523,  # Aphelios
-            "33": 268,  # Azir
-            "34": 200,  # Bel'Veth
-            "35": 63,   # Brand
-            "36": 910,  # Hwei
-            "37": 115,  # Ziggs
-            "38": 143,  # Zyra
-            "39": 888,  # Renata
-            "40": 75,   # Nasus
-            "41": 420   # Illaoi
+        self.stock_ids = {
+            "AAPL": 233,   # Apple
+            "MSFT": 950,   # Microsoft
+            "GOOGL": 777,  # Google
+            "AMZN": 246,   # Amazon
+            "TSLA": 517,   # Tesla
+            "NVDA": 84,    # NVIDIA
+            "META": 105,   # Meta
+            "NFLX": 142,   # Netflix
+            "AMD": 136,    # AMD
+            "INTC": 53,    # Intel
+            "ORCL": 31,    # Oracle
+            "CRM": 42,     # Salesforce
+            "ADBE": 28,    # Adobe
+            "PYPL": 104,   # PayPal
+            "UBER": 59,    # Uber
+            "SPOT": 99,    # Spotify
+            "SQ": 54,      # Block
+            "SHOP": 64,    # Shopify
+            "COIN": 35,    # Coinbase
+            "RBLX": 91,    # Roblox
+            "AI": 800,     # C3.ai
+            "IBM": 3,      # IBM
+            "PLTR": 887,   # Palantir
+            "SNOW": 34,    # Snowflake
+            "ZM": 76,      # Zoom
+            "DOCU": 90,    # DocuSign
+            "CRWD": 895,   # CrowdStrike
+            "OKTA": 98,    # Okta
+            "TWLO": 14,    # Twilio
+            "DDOG": 15,    # Datadog
+            "NET": 804,    # Cloudflare
+            "MDB": 523,    # MongoDB
+            "WDAY": 268,   # Workday
+            "NOW": 200,    # ServiceNow
+            "TEAM": 63,    # Atlassian
+            "PANW": 910,   # Palo Alto
+            "ZS": 115,     # Zscaler
+            "VEEV": 143,   # Veeva
+            "ESTC": 888,   # Elastic
+            "SPLK": 75,    # Splunk
+            "FIVN": 420    # Five9
         }
 
-        self.allocated_resources = []
+        self.owned_stocks = []
         
-        # Nếu cần ID thay thế (ví dụ: skin khác, phiên bản khác)
-        self.alternative_resource_ids = {
-            "2": [800, 950, 980, 910]  # Nhiều ID phân bổ tài nguyên
+        # Alternative stock IDs for different exchanges
+        self.alternative_stock_ids = {
+            "MSFT": [800, 950, 980, 910]  # Multiple exchange listings
         }
         
-        # Trạng thái lựa chọn tiến trình
-        self.last_allocation = None
-        self.selected_resources = []  
-        self.selected_resource_names = []  
+        # Trading state tracking
+        self.last_trade = None
+        self.selected_stocks = []  
+        self.selected_stock_symbols = []  
         
-        # Trạng thái kết nối
+        # Connection status
         self.is_connected = False
         
-        # Theo dõi trạng thái tiến trình
-        self.current_process_session = None
-        self.has_allocated_in_session = False
+        # Trading session tracking
+        self.current_trading_session = None
+        self.has_traded_in_session = False
         
-        # Bắt đầu giám sát hệ thống nền
+        # Start background market monitoring
         self.start_background_monitor()
         
     def start_background_monitor(self):
-        """Bắt đầu giám sát nền cho tiến trình đích"""
-        self.log_system_message("KHỞI_TẠO_HT: Đang chờ khởi tạo tiến trình đích")
-        # Bắt đầu luồng giám sát
+        """Start background monitoring for trading platform"""
+        self.log_trading_message("MARKET_INIT: Waiting for trading platform initialization")
+        # Start monitoring thread
         monitoring_thread = threading.Thread(target=self.background_monitor, daemon=True)
         monitoring_thread.start()
         
     def background_monitor(self):
-        """Giám sát nền cho trạng thái kết nối tiến trình"""
+        """Background monitoring for trading platform connection"""
         while True:
             try:
-                # Kiểm tra xem tiến trình đích có đang chạy không
-                process_running = self.detect_target_process() is not None
+                # Check if trading platform is running
+                platform_running = self.detect_trading_platform() is not None
                 
-                if process_running and not self.is_connected:
-                    # Tiến trình vừa khởi động
+                if platform_running and not self.is_connected:
+                    # Platform just started
                     self.is_connected = True
-                    self.log_system_message("KẾT_NỐI_TC: Đã phát hiện tiến trình và thiết lập kết nối")
+                    self.log_trading_message("PLATFORM_CONNECTED: Trading platform detected and connection established")
                     
-                    # Thử thiết lập kết nối
-                    process_dir = self.detect_target_process()
-                    if process_dir:
-                        lockpath = os.path.join(process_dir, 'lockfile')
+                    # Try to establish connection
+                    platform_dir = self.detect_trading_platform()
+                    if platform_dir:
+                        lockpath = os.path.join(platform_dir, 'lockfile')
                         if os.path.isfile(lockpath):
                             try:
                                 with open(lockpath, 'r') as f:
@@ -181,49 +181,49 @@ class SystemProcessManager:
                                 username = 'riot'
                                 password = lock[3]
                                 
-                                # Thiết lập phiên
+                                # Setup session
                                 userpass = b64encode(f'{username}:{password}'.encode()).decode('ascii')
                                 self.headers = {'Authorization': f'Basic {userpass}'}
                                 self.session = requests.session()
                                 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
                                 
-                                # Tự động kiểm tra phân bổ tài nguyên khi kết nối
-                                if self.selected_resource_names:
-                                    if len(self.selected_resource_names) == 1:
-                                        # Tài nguyên đơn - kiểm tra sau khi tiến trình tải
-                                        resource_name = self.selected_resource_names[0]
-                                        self.root.after(4000, lambda: self.check_single_resource_allocation(resource_name))
+                                # Auto-check portfolio when connected
+                                if self.selected_stock_symbols:
+                                    if len(self.selected_stock_symbols) == 1:
+                                        # Single stock - check after platform loads
+                                        stock_symbol = self.selected_stock_symbols[0]
+                                        self.root.after(4000, lambda: self.check_single_stock_ownership(stock_symbol))
                                     else:
-                                        # Nhiều tài nguyên - kiểm tra với tải
-                                        self.root.after(4000, lambda: self.check_multiple_resources_allocation(self.selected_resource_names))
+                                        # Multiple stocks - check with loading
+                                        self.root.after(4000, lambda: self.check_multiple_stocks_ownership(self.selected_stock_symbols))
                                 
                             except Exception as e:
-                                self.log_system_message(f"LỖI_KN: Kết nối thất bại - {str(e)}")
+                                self.log_trading_message(f"CONNECTION_ERROR: Connection failed - {str(e)}")
                                 
-                elif not process_running and self.is_connected:
-                    # Tiến trình đã bị kết thúc
+                elif not platform_running and self.is_connected:
+                    # Platform was closed
                     self.is_connected = False
-                    self.log_system_message("KHỞI_TẠO_HT: Đang chờ khởi tạo tiến trình đích")
+                    self.log_trading_message("MARKET_INIT: Waiting for trading platform initialization")
                     
             except Exception as e:
-                pass  # Im lặng xử lý lỗi trong giám sát nền
+                pass  # Silent error handling in background monitoring
                 
-            sleep(3)  # Kiểm tra mỗi 3 giây
+            sleep(3)  # Check every 3 seconds
             
-    def on_resource_selected(self, event=None):
-        """Xử lý lựa chọn tài nguyên từ giao diện"""
+    def on_stock_selected(self, event=None):
+        """Handle stock selection from interface"""
         if not self.is_connected:
-            self.log_system_message(f"CẢNH_BÁO_TT: Tiến trình đích phải được khởi tạo trước khi phân bổ tài nguyên")
+            self.log_trading_message(f"PLATFORM_WARNING: Trading platform must be initialized before stock selection")
             return
             
-    def check_resource_allocation(self, resource_name):
-        """Kiểm tra xem tài nguyên đã chọn có được phân bổ không - Kiểm tra tương thích hệ thống"""
+    def check_stock_ownership(self, stock_symbol):
+        """Check if selected stock is owned - Portfolio compatibility check"""
         try:
             if not self.session or not self.headers:
-                self.log_system_message(f"CẢNH_BÁO_PHIÊN: Phiên chưa được thiết lập để xác thực tài nguyên")
+                self.log_trading_message(f"SESSION_WARNING: Session not established for portfolio verification")
                 return
                 
-            # Thử các điểm cuối API khác nhau để xác thực dữ liệu tài nguyên
+            # Try different API endpoints to verify portfolio data
             endpoints = [
                 '/lol-champions/v1/owned-champions-minimal',
                 '/lol-champions/v1/inventories/1/champions-minimal',
@@ -232,69 +232,69 @@ class SystemProcessManager:
                 '/lol-collections/v1/inventories/CHAMPION'
             ]
             
-            allocated_resources = []
+            owned_stocks = []
             
             for endpoint in endpoints:
                 try:
                     r = self.request('get', endpoint)
                     if r.status_code == 200:
-                        allocated = r.json()
-                        if isinstance(allocated, list):
-                            for resource in allocated:
-                                if isinstance(resource, dict):
-                                    resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
-                                    if resource_id and resource.get('active', True):
-                                        allocated_resources.append(resource_id)
-                        elif isinstance(allocated, dict) and 'champions' in allocated:
-                            for resource in allocated['champions']:
-                                resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
-                                if resource_id and resource.get('active', True):
-                                    allocated_resources.append(resource_id)
+                        owned = r.json()
+                        if isinstance(owned, list):
+                            for stock in owned:
+                                if isinstance(stock, dict):
+                                    stock_id = stock.get('id') or stock.get('championId') or stock.get('itemId')
+                                    if stock_id and stock.get('active', True):
+                                        owned_stocks.append(stock_id)
+                        elif isinstance(owned, dict) and 'champions' in owned:
+                            for stock in owned['champions']:
+                                stock_id = stock.get('id') or stock.get('championId') or stock.get('itemId')
+                                if stock_id and stock.get('active', True):
+                                    owned_stocks.append(stock_id)
                         
-                        if allocated_resources:
+                        if owned_stocks:
                             break
                 except Exception:
                     continue
             
-            if not allocated_resources:
-                self.log_system_message(f"CẢNH_BÁO_PHÂN_BỔ: Xác thực tài nguyên không khả dụng - tiến hành phân bổ trực tiếp")
+            if not owned_stocks:
+                self.log_trading_message(f"PORTFOLIO_WARNING: Portfolio verification unavailable - proceeding with direct trading")
                 return
                 
-            # Kiểm tra phân bổ nâng cao với ID thay thế
-            primary_id = self.resource_ids.get(resource_name)
-            alt_ids = self.alternative_resource_ids.get(resource_name, [])
+            # Check ownership with alternative IDs
+            primary_id = self.stock_ids.get(stock_symbol)
+            alt_ids = self.alternative_stock_ids.get(stock_symbol, [])
             all_ids_to_check = [primary_id] + alt_ids if primary_id else alt_ids
             
-            resource_found = False
+            stock_found = False
             found_id = None
             
-            for resource_id in all_ids_to_check:
-                if resource_id and resource_id in allocated_resources:
-                    resource_found = True
-                    found_id = resource_id
-                    # Cập nhật ID chính nếu tìm thấy thay thế
-                    if resource_id != primary_id:
-                        self.resource_ids[resource_name] = resource_id
+            for stock_id in all_ids_to_check:
+                if stock_id and stock_id in owned_stocks:
+                    stock_found = True
+                    found_id = stock_id
+                    # Update primary ID if alternative found
+                    if stock_id != primary_id:
+                        self.stock_ids[stock_symbol] = stock_id
                     break
             
-            if resource_found:
-                self.log_system_message(f"TÀI_NGUYÊN_HỢP_LỆ: Đã xác nhận phân bổ {resource_name}")
+            if stock_found:
+                self.log_trading_message(f"STOCK_VERIFIED: Confirmed ownership of {stock_symbol}")
             else:
-                self.log_system_message(f"TÀI_NGUYÊN_KHÔNG_CÓ: {resource_name} không có sẵn trong kho phân bổ hiện tại")
-                self.log_system_message(f"THÔNG_TIN_KHO: Tổng tài nguyên đã phân bổ: {len(allocated_resources)}")
+                self.log_trading_message(f"STOCK_UNAVAILABLE: {stock_symbol} not available in current portfolio")
+                self.log_trading_message(f"PORTFOLIO_INFO: Total owned stocks: {len(owned_stocks)}")
                 
         except Exception as e:
-            self.log_system_message(f"LỖI_XÁC_THỰC: Xác thực tài nguyên {resource_name} thất bại - {str(e)}")
+            self.log_trading_message(f"VERIFICATION_ERROR: Stock verification for {stock_symbol} failed - {str(e)}")
         
     def setup_window(self):
-        self.root.title("Quản Lý Tài Nguyên Hệ Thống")
-        self.root.geometry("600x750")
-        self.root.resizable(True, True)  # Cho phép thay đổi kích thước
+        self.root.title("Professional Stock Trading Platform")
+        self.root.geometry("700x800")
+        self.root.resizable(True, True)
         
-        # Đặt kích thước tối thiểu
-        self.root.minsize(350, 400)
+        # Set minimum size
+        self.root.minsize(400, 500)
         
-        # Xóa biểu tượng cửa sổ - thử nhiều phương pháp
+        # Remove window icon
         try:
             self.root.iconbitmap('')
         except:
@@ -306,56 +306,56 @@ class SystemProcessManager:
                 except:
                     pass
         
-        # Nền chủ đề tối hiện đại
-        self.root.configure(bg='#1e1e1e')
+        # Modern dark theme background
+        self.root.configure(bg='#0d1421')
         self.center_window()
         
-        # Ràng buộc sự kiện thay đổi kích thước cho thiết kế đáp ứng
+        # Bind resize event for responsive design
         self.root.bind('<Configure>', self.on_window_resize)
         
     def on_window_resize(self, event):
-        """Xử lý sự kiện thay đổi kích thước cửa sổ cho thiết kế đáp ứng"""
+        """Handle window resize event for responsive design"""
         if event.widget == self.root:
-            # Điều chỉnh kích thước phông chữ dựa trên kích thước cửa sổ
+            # Adjust font sizes based on window size
             width = self.root.winfo_width()
             height = self.root.winfo_height()
             
-            # Tính hệ số tỷ lệ
-            base_width, base_height = 600, 750
+            # Calculate scale factor
+            base_width, base_height = 700, 800
             scale_x = width / base_width
             scale_y = height / base_height
             scale = min(scale_x, scale_y)
             
-            # Tỷ lệ tối thiểu để giữ văn bản có thể đọc được
+            # Minimum scale to keep text readable
             scale = max(scale, 0.6)
             
-            # Cập nhật phong cách dựa trên tỷ lệ
+            # Update styles based on scale
             self.update_responsive_styles(scale)
     
     def update_responsive_styles(self, scale):
-        """Cập nhật phong cách dựa trên tỷ lệ cho thiết kế đáp ứng"""
+        """Update styles based on scale for responsive design"""
         try:
             style = ttk.Style()
             
-            # Tính kích thước phông chữ
-            title_size = max(int(20 * scale), 12)
-            subtitle_size = max(int(14 * scale), 10)
-            button_size = max(int(12 * scale), 9)
-            text_size = max(int(11 * scale), 8)
+            # Calculate font sizes
+            title_size = max(int(22 * scale), 14)
+            subtitle_size = max(int(16 * scale), 11)
+            button_size = max(int(13 * scale), 10)
+            text_size = max(int(12 * scale), 9)
             
-            # Cập nhật phong cách
+            # Update styles
             style.configure('Title.TLabel', font=('Segoe UI', title_size, 'bold'))
             style.configure('Subtitle.TLabel', font=('Segoe UI', subtitle_size))
             style.configure('Custom.TCheckbutton', font=('Segoe UI', text_size))
             
-            # Cập nhật phông chữ nút
-            if hasattr(self, 'select_resource_button'):
-                self.select_resource_button.config(font=('Segoe UI', button_size, 'bold'))
+            # Update button fonts
+            if hasattr(self, 'select_stocks_button'):
+                self.select_stocks_button.config(font=('Segoe UI', button_size, 'bold'))
             if hasattr(self, 'start_button'):
                 self.start_button.config(font=('Segoe UI', button_size, 'bold'))
             
         except Exception:
-            pass  # Im lặng xử lý lỗi cập nhật phông chữ
+            pass  # Silent font update error handling
         
     def center_window(self):
         self.root.update_idletasks()
@@ -366,136 +366,134 @@ class SystemProcessManager:
         self.root.geometry(f'{width}x{height}+{x}+{y}')
         
     def setup_variables(self):
-        self.selected_resource = tk.StringVar(value="1")
+        self.selected_stock = tk.StringVar(value="AAPL")
         self.execution_delay = tk.StringVar(value="0")
         
     def setup_styles(self):
         style = ttk.Style()
         style.theme_use('clam')
         
-        # Cấu hình phong cách VIP hiện đại với gradient và vẻ ngoài chuyên nghiệp
+        # Configure professional trading platform styles
         style.configure('Title.TLabel', 
-                       background='#1e1e1e', 
+                       background='#0d1421', 
                        foreground='#00d4aa',
-                       font=('Segoe UI', 20, 'bold'))
+                       font=('Segoe UI', 22, 'bold'))
         
         style.configure('Subtitle.TLabel',
-                       background='#1e1e1e',
+                       background='#0d1421',
                        foreground='#ffffff',
-                       font=('Segoe UI', 12))
+                       font=('Segoe UI', 14))
         
         style.configure('Custom.TCheckbutton',
-                       background='#1e1e1e',
+                       background='#0d1421',
                        foreground='#ffffff',
-                       font=('Segoe UI', 11),
+                       font=('Segoe UI', 12),
                        focuscolor='none')
         
-        style.configure('VIP.TButton',
-                       font=('Segoe UI', 14, 'bold'),
-                       padding=(20, 10))
+        style.configure('Trading.TButton',
+                       font=('Segoe UI', 16, 'bold'),
+                       padding=(25, 12))
         
     def create_widgets(self):
-        # Khung chính với lưới đáp ứng
-        main_frame = tk.Frame(self.root, bg='#1e1e1e')
-        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        # Main frame with responsive grid
+        main_frame = tk.Frame(self.root, bg='#0d1421')
+        main_frame.pack(fill='both', expand=True, padx=25, pady=25)
         
-        # Cấu hình trọng số lưới cho đáp ứng
-        main_frame.grid_rowconfigure(5, weight=1)  # Vùng log sẽ mở rộng
+        # Configure grid weights for responsiveness
+        main_frame.grid_rowconfigure(5, weight=1)  # Log area will expand
         
-        # Tiêu đề VIP với hiệu ứng gradient
-        title_frame = tk.Frame(main_frame, bg='#1e1e1e')
-        title_frame.pack(fill='x', pady=(0, 20))
+        # Professional trading platform header
+        title_frame = tk.Frame(main_frame, bg='#0d1421')
+        title_frame.pack(fill='x', pady=(0, 25))
         
-        title_label = ttk.Label(title_frame, text="⚡ QUẢN LÝ TÀI NGUYÊN HỆ THỐNG", style='Title.TLabel')
+        title_label = ttk.Label(title_frame, text="📈 PROFESSIONAL STOCK TRADING PLATFORM", style='Title.TLabel')
         title_label.pack()
         
-        version_label = ttk.Label(title_frame, text="Phiên Bản Chuyên Nghiệp", 
+        version_label = ttk.Label(title_frame, text="Advanced Portfolio Management System", 
                                 style='Subtitle.TLabel')
         version_label.pack()
         
-        # Phần phân bổ tài nguyên với kiểu dáng VIP
-        resource_frame = tk.LabelFrame(main_frame, text="Điều Khiển Phân Bổ Tài Nguyên", 
-                                     bg='#2d2d2d', fg='#00d4aa', 
-                                     font=('Segoe UI', 12, 'bold'), padx=20, pady=15,
+        # Stock portfolio section with professional styling
+        portfolio_frame = tk.LabelFrame(main_frame, text="Portfolio Management", 
+                                     bg='#1a2332', fg='#00d4aa', 
+                                     font=('Segoe UI', 14, 'bold'), padx=25, pady=20,
                                      relief='groove', bd=2)
-        resource_frame.pack(fill='x', pady=(0, 15))
+        portfolio_frame.pack(fill='x', pady=(0, 20))
         
-        # Nút lựa chọn tài nguyên với kiểu dáng VIP
-        self.select_resource_button = tk.Button(resource_frame, text="🎯 CẤU HÌNH TÀI NGUYÊN",
-                                               command=self.open_resource_selection_dialog,
-                                               font=('Segoe UI', 12, 'bold'),
+        # Stock selection button with professional styling
+        self.select_stocks_button = tk.Button(portfolio_frame, text="📊 CONFIGURE PORTFOLIO",
+                                               command=self.open_stock_selection_dialog,
+                                               font=('Segoe UI', 13, 'bold'),
                                                bg='#0066cc', fg='white',
                                                activebackground='#0052a3',
                                                relief='raised', bd=3,
-                                               padx=25, pady=12,
+                                               padx=30, pady=15,
                                                cursor='hand2')
-        self.select_resource_button.pack(pady=(0, 10))
+        self.select_stocks_button.pack(pady=(0, 15))
         
-        # Hiển thị tài nguyên với kiểu dáng hiện đại
-        self.resources_display_frame = tk.Frame(resource_frame, bg='#2d2d2d')
-        self.resources_display_frame.pack(anchor='w', pady=(5, 0), fill='x')
+        # Portfolio display with modern styling
+        self.portfolio_display_frame = tk.Frame(portfolio_frame, bg='#1a2332')
+        self.portfolio_display_frame.pack(anchor='w', pady=(8, 0), fill='x')
         
-        self.resources_label = tk.Label(self.resources_display_frame, 
-                                       text="Chưa cấu hình tài nguyên", bg='#2d2d2d', fg='#cccccc', 
-                                       font=('Segoe UI', 10), wraplength=450)
-        self.resources_label.pack(side='left', anchor='w')
+        self.portfolio_label = tk.Label(self.portfolio_display_frame, 
+                                       text="No stocks configured", bg='#1a2332', fg='#cccccc', 
+                                       font=('Segoe UI', 11), wraplength=500)
+        self.portfolio_label.pack(side='left', anchor='w')
         
-        # Chỉ báo tải với hoạt hình hiện đại
-        self.loading_frame = tk.Frame(resource_frame, bg='#2d2d2d')
+        # Loading indicator with modern animation
+        self.loading_frame = tk.Frame(portfolio_frame, bg='#1a2332')
         self.loading_label = tk.Label(self.loading_frame, 
-                                    text="⏳ Đang xác thực phân bổ tài nguyên...", 
-                                    bg='#2d2d2d', fg='#ff9500', 
-                                    font=('Segoe UI', 9))
+                                    text="⏳ Verifying portfolio holdings...", 
+                                    bg='#1a2332', fg='#ff9500', 
+                                    font=('Segoe UI', 10))
         self.loading_label.pack()
         
-        # Điều khiển thời gian thực thi
-        timing_label = tk.Label(resource_frame, text="Độ Trễ Thực Thi (ms):", 
-                             bg='#2d2d2d', fg='#cccccc', font=('Segoe UI', 10))
-        timing_label.pack(anchor='w', pady=(8, 3))
+        # Trading execution controls
+        timing_label = tk.Label(portfolio_frame, text="Execution Delay (ms):", 
+                             bg='#1a2332', fg='#cccccc', font=('Segoe UI', 11))
+        timing_label.pack(anchor='w', pady=(12, 5))
         
-        timing_entry = tk.Entry(resource_frame, textvariable=self.execution_delay, 
-                             width=12, font=('Segoe UI', 10), bg='#404040', fg='white',
+        timing_entry = tk.Entry(portfolio_frame, textvariable=self.execution_delay, 
+                             width=15, font=('Segoe UI', 11), bg='#404040', fg='white',
                              insertbackground='white', relief='flat', bd=5)
         timing_entry.pack(anchor='w')
         
-        # Cài đặt thực thi tự động
-        execution_frame = tk.LabelFrame(main_frame, text="Cài Đặt Thực Thi", 
-                                 bg='#2d2d2d', fg='#00d4aa', 
-                                 font=('Segoe UI', 12, 'bold'), padx=20, pady=15,
+        # Trading settings
+        trading_frame = tk.LabelFrame(main_frame, text="Trading Settings", 
+                                 bg='#1a2332', fg='#00d4aa', 
+                                 font=('Segoe UI', 14, 'bold'), padx=25, pady=20,
                                  relief='groove', bd=2)
-        execution_frame.pack(fill='x', pady=(0, 15))
+        trading_frame.pack(fill='x', pady=(0, 20))
         
-        # Đã xóa chức năng tự động khóa tài nguyên
+        # Trading control panel with professional buttons
+        control_frame = tk.Frame(main_frame, bg='#0d1421')
+        control_frame.pack(fill='x', pady=(0, 20))
         
-        # Bảng điều khiển với các nút VIP
-        control_frame = tk.Frame(main_frame, bg='#1e1e1e')
-        control_frame.pack(fill='x', pady=(0, 15))
-        
-        self.start_button = tk.Button(control_frame, text="⚡ KHỞI TẠO HỆ THỐNG", 
-                                    command=self.toggle_system_monitor,
-                                    font=('Segoe UI', 14, 'bold'),
+        self.start_button = tk.Button(control_frame, text="🚀 START TRADING", 
+                                    command=self.toggle_trading_system,
+                                    font=('Segoe UI', 16, 'bold'),
                                     bg='#00cc44', fg='white',
                                     activebackground='#00b33c',
                                     activeforeground='white',
                                     relief='raised',
-                                    bd=4, padx=40, pady=12,
+                                    bd=4, padx=50, pady=15,
                                     cursor='hand2')
         self.start_button.pack()
         
-        # Phần trạng thái hệ thống với thiết kế hiện đại
-        status_frame = tk.LabelFrame(main_frame, text="Giám Sát Hệ Thống", 
-                                   bg='#2d2d2d', fg='#00d4aa', 
-                                   font=('Segoe UI', 12, 'bold'), padx=10, pady=10,
+        # Market monitoring section with modern design
+        status_frame = tk.LabelFrame(main_frame, text="Market Monitor", 
+                                   bg='#1a2332', fg='#00d4aa', 
+                                   font=('Segoe UI', 14, 'bold'), padx=15, pady=15,
                                    relief='groove', bd=2)
         status_frame.pack(fill='both', expand=True)
         
-        # Vùng log với giao diện terminal hiện đại
-        log_frame = tk.Frame(status_frame, bg='#2d2d2d')
+        # Trading log with terminal-like interface
+        log_frame = tk.Frame(status_frame, bg='#1a2332')
         log_frame.pack(fill='both', expand=True)
         
-        self.log_text = tk.Text(log_frame, height=12, 
-                              bg='#1a1a1a', fg='#00ff41',
-                              font=('Consolas', 9),
+        self.log_text = tk.Text(log_frame, height=14, 
+                              bg='#0a0a0a', fg='#00ff41',
+                              font=('Consolas', 10),
                               wrap=tk.WORD, state=tk.DISABLED,
                               selectbackground='#404040',
                               insertbackground='#00ff41',
@@ -504,110 +502,110 @@ class SystemProcessManager:
         scrollbar = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_text.yview)
         self.log_text.configure(yscrollcommand=scrollbar.set)
         
-        self.log_text.pack(side="left", fill="both", expand=True, padx=5, pady=5)
-        scrollbar.pack(side="right", fill="y", padx=(0, 5), pady=5)
+        self.log_text.pack(side="left", fill="both", expand=True, padx=8, pady=8)
+        scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=8)
         
-    def log_system_message(self, message, color='#00ff41'):
-        """Ghi log thông điệp hệ thống với kiểu dáng terminal"""
-        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]  # Bao gồm mili giây
+    def log_trading_message(self, message, color='#00ff41'):
+        """Log trading system messages with terminal styling"""
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]  # Include milliseconds
         formatted_message = f"[{timestamp}] {message}\n"
         
         self.log_text.config(state=tk.NORMAL)
         
-        # Thêm mã màu cho các loại thông điệp khác nhau
-        if message.startswith("LỖI_"):
+        # Add color coding for different message types
+        if message.startswith("ERROR_"):
             color = '#ff4444'
-        elif message.startswith("CẢNH_BÁO_"):
+        elif message.startswith("WARNING_") or message.startswith("PLATFORM_WARNING"):
             color = '#ffaa00'
-        elif message.startswith("THÀNH_CÔNG_") or message.startswith("KẾT_NỐI_TC"):
+        elif message.startswith("SUCCESS_") or message.startswith("PLATFORM_CONNECTED"):
             color = '#44ff44'
-        elif message.startswith("HỆ_THỐNG_"):
+        elif message.startswith("SYSTEM_") or message.startswith("MARKET_"):
             color = '#4488ff'
         else:
             color = '#00ff41'
             
-        # Chèn với màu (đơn giản hóa cho tkinter cơ bản)
+        # Insert with color (simplified for basic tkinter)
         self.log_text.insert(tk.END, formatted_message)
         self.log_text.config(state=tk.DISABLED)
         self.log_text.see(tk.END)
         
-    def toggle_system_monitor(self):
-        """Chuyển đổi trạng thái giám sát hệ thống"""
-        if not self.is_monitoring:
-            self.start_system_monitoring()
+    def toggle_trading_system(self):
+        """Toggle trading system state"""
+        if not self.is_trading_active:
+            self.start_trading_system()
         else:
-            self.stop_system_monitoring()
+            self.stop_trading_system()
             
-    def start_system_monitoring(self):
-        """Bắt đầu quá trình giám sát hệ thống"""
-        # Kiểm tra xem tài nguyên có được cấu hình không
-        if not self.selected_resource_names:
-            self.log_system_message("CẢNH_BÁO_CFG: Vui lòng cấu hình tài nguyên trước khi khởi tạo")
+    def start_trading_system(self):
+        """Start trading system monitoring"""
+        # Check if stocks are configured
+        if not self.selected_stock_symbols:
+            self.log_trading_message("CONFIG_WARNING: Please configure portfolio before starting trading system")
             return
         
-        # Xóa vùng log
+        # Clear log area
         self.log_text.config(state=tk.NORMAL)
         self.log_text.delete(1.0, tk.END)
         self.log_text.config(state=tk.DISABLED)
         
-        if len(self.selected_resource_names) == 1:
-            mode_text = f"Tài nguyên: {self.selected_resource_names[0]}"
+        if len(self.selected_stock_symbols) == 1:
+            mode_text = f"Stock: {self.selected_stock_symbols[0]}"
         else:
-            mode_text = f"Phân bổ động ({len(self.selected_resource_names)} tài nguyên)"
+            mode_text = f"Dynamic portfolio ({len(self.selected_stock_symbols)} stocks)"
         
-        self.log_system_message(f"KHỞI_ĐỘNG_HT: Giám sát hệ thống đã khởi tạo - {mode_text}")
-        self.log_system_message("CHỜ_TIẾN_TRÌNH: Đang chờ kích hoạt tiến trình đích...")
+        self.log_trading_message(f"TRADING_START: Trading system initialized - {mode_text}")
+        self.log_trading_message("WAITING_PLATFORM: Waiting for trading platform activation...")
         
-        # Bắt đầu luồng worker để kiểm tra phân bổ trước
-        self.is_monitoring = True
-        self.start_button.config(text="⏹️ DỪNG HỆ THỐNG", bg='#ff4444', activebackground='#cc3333')
+        # Start worker thread for pre-trade checks
+        self.is_trading_active = True
+        self.start_button.config(text="⏹️ STOP TRADING", bg='#ff4444', activebackground='#cc3333')
         
-        self.worker_thread = threading.Thread(target=self.system_monitoring_worker, daemon=True)
+        self.worker_thread = threading.Thread(target=self.trading_system_worker, daemon=True)
         self.worker_thread.start()
         
-    def stop_system_monitoring(self):
-        """Dừng giám sát hệ thống"""
-        self.is_monitoring = False
-        self.start_button.config(text="⚡ KHỞI TẠO HỆ THỐNG", bg='#00cc44', activebackground='#00b33c')
-        self.log_system_message("DỪNG_HT: Giám sát hệ thống đã dừng")
+    def stop_trading_system(self):
+        """Stop trading system"""
+        self.is_trading_active = False
+        self.start_button.config(text="🚀 START TRADING", bg='#00cc44', activebackground='#00b33c')
+        self.log_trading_message("TRADING_STOP: Trading system stopped")
         
-    def get_random_resource(self):
-        """Lấy tài nguyên tiếp theo trong vòng quay"""
-        resources = ["1", "2"]
-        if self.last_allocation is None:
-            self.last_allocation = random.choice(resources)
+    def get_random_stock(self):
+        """Get next stock in rotation"""
+        stocks = ["AAPL", "MSFT"]
+        if self.last_trade is None:
+            self.last_trade = random.choice(stocks)
         else:
-            # Xoay phiên giữa 1 và 2
-            if self.last_allocation == "1":
-                self.last_allocation = "2"
+            # Rotate between AAPL and MSFT
+            if self.last_trade == "AAPL":
+                self.last_trade = "MSFT"
             else:
-                self.last_allocation = "1"
-        return self.last_allocation
+                self.last_trade = "AAPL"
+        return self.last_trade
         
-    def system_monitoring_worker(self):
-        """Luồng worker chính cho giám sát hệ thống và phân bổ tài nguyên"""
+    def trading_system_worker(self):
+        """Main worker thread for trading system monitoring and stock trading"""
         try:
-            # Chờ tiến trình đích khởi động
-            if not self.wait_for_target_process():
+            # Wait for trading platform startup
+            if not self.wait_for_trading_platform():
                 return
                 
-            # Chờ xác thực tiến trình
+            # Wait for authentication
             if not self.wait_for_authentication():
                 return
                 
-            self.log_system_message("THÀNH_CÔNG_XÁC_THỰC: Tiến trình đã được xác thực và thiết lập kết nối hệ thống")
+            self.log_trading_message("AUTH_SUCCESS: Platform authenticated and trading connection established")
             
-            # Lấy tài nguyên đã phân bổ
-            if not self.get_allocated_resources():
-                self.log_system_message("CẢNH_BÁO_TÀI_NGUYÊN: Không thể truy xuất kho phân bổ tài nguyên")
+            # Get owned stocks
+            if not self.get_owned_stocks():
+                self.log_trading_message("PORTFOLIO_WARNING: Unable to retrieve portfolio holdings")
             
-            # Vòng lặp giám sát chính
-            resource_idx = 0
+            # Main monitoring loop
+            stock_idx = 0
             priority_set = False
             
-            while self.is_monitoring:
+            while self.is_trading_active:
                 try:
-                    # Lấy giai đoạn tiến trình
+                    # Get trading phase
                     r = self.request('get', '/lol-gameflow/v1/gameflow-phase')
                     if r.status_code != 200:
                         sleep(1)
@@ -615,19 +613,19 @@ class SystemProcessManager:
                         
                     phase = r.json()
                     
-                    # Chỉ thông báo khi phát hiện yêu cầu tiến trình, không tự động chấp nhận
+                    # Only notify when trade confirmation detected, don't auto-accept
                     if phase == 'ReadyCheck':
-                        self.log_system_message("Ô Đồny ý Hay Không Đây-.-")
+                        self.log_trading_message("Trade Confirmation Required - Please Review")
                     
-                    # Xử lý phân bổ tài nguyên
+                    # Handle stock trading
                     elif phase == 'ChampSelect':
-                        self.handle_resource_allocation()
+                        self.handle_stock_trading()
                         
                     elif phase == 'InProgress':
                         if not priority_set:
                             self.set_process_priority()
                             priority_set = True
-                        self.log_system_message("TIẾN_TRÌNH_HOẠT_ĐỘNG: Tiến trình đang thực thi")
+                        self.log_trading_message("TRADING_ACTIVE: Trading session in progress")
                         
                     elif phase in ['Matchmaking', 'Lobby', 'None']:
                         priority_set = False
@@ -635,17 +633,17 @@ class SystemProcessManager:
                     sleep(1)
                     
                 except Exception as e:
-                    self.log_system_message(f"LỖI_GIÁM_SÁT: Lỗi giám sát - {str(e)}")
+                    self.log_trading_message(f"MONITOR_ERROR: Monitoring error - {str(e)}")
                     sleep(2)
                     
         except Exception as e:
-            self.log_system_message(f"LỖI_NGHIÊM_TRỌNG: Lỗi hệ thống nghiêm trọng - {str(e)}")
+            self.log_trading_message(f"CRITICAL_ERROR: Critical system error - {str(e)}")
         finally:
-            if self.is_monitoring:
-                self.root.after(0, self.stop_system_monitoring)
+            if self.is_trading_active:
+                self.root.after(0, self.stop_trading_system)
                 
-    def handle_resource_allocation(self):
-        """Xử lý giai đoạn phân bổ tài nguyên hệ thống"""
+    def handle_stock_trading(self):
+        """Handle stock trading phase"""
         try:
             r = self.request('get', '/lol-champ-select/v1/session')
             if r.status_code != 200:
@@ -653,122 +651,121 @@ class SystemProcessManager:
                 
             session_data = r.json()
             
-            # Lấy ID phiên hiện tại để theo dõi các phiên khác nhau
+            # Get current session ID to track different sessions
             try:
                 session_id = str(session_data.get('gameId', 0))
                 if not session_id or session_id == '0':
                     session_id = str(session_data.get('timer', {}).get('adjustedTimeLeftInPhase', 0))
             except:
-                session_id = "không_rõ"
+                session_id = "unknown"
             
-            # Kiểm tra xem đây có phải là phiên mới không
-            if self.current_process_session != session_id:
-                self.current_process_session = session_id
-                self.has_allocated_in_session = False
+            # Check if this is a new session
+            if self.current_trading_session != session_id:
+                self.current_trading_session = session_id
+                self.has_traded_in_session = False
             
-            # Nếu đã phân bổ trong phiên này, không phân bổ lại
-            if self.has_allocated_in_session:
+            # If already traded in this session, don't trade again
+            if self.has_traded_in_session:
                 return
                 
             actor_cell_id = -1
             
-            # Tìm ID ô tiến trình của chúng ta
+            # Find our trader cell ID
             for member in session_data['myTeam']:
-                if member['summonerId'] == self.process_id:
+                if member['summonerId'] == self.trader_id:
                     actor_cell_id = member['cellId']
                     
             if actor_cell_id == -1:
                 return
                 
-            # Kiểm tra hành động phân bổ
+            # Check trading actions
             for action in session_data['actions'][0]:
                 if action['actorCellId'] != actor_cell_id:
                     continue
                     
-                if action['championId'] == 0:  # Chưa phân bổ
-                    # Xác định tài nguyên nào để phân bổ - sử dụng ngẫu nhiên thực từ tài nguyên đã chọn
-                    if self.selected_resource_names:
-                        resource_name = random.choice(self.selected_resource_names)
-                        self.log_system_message(f"LỰA_CHỌN_PHÂN_BỔ: Phân bổ động đã chọn: {resource_name}")
+                if action['championId'] == 0:  # Not traded yet
+                    # Determine which stock to trade - use true random from selected stocks
+                    if self.selected_stock_symbols:
+                        stock_symbol = random.choice(self.selected_stock_symbols)
+                        self.log_trading_message(f"TRADE_SELECTION: Dynamic trading selected: {stock_symbol}")
                     else:
-                        # Fallback cho logic cũ nếu không có tài nguyên được chọn
-                        selected = self.selected_resource.get()
-                        if selected == "Ngẫu_nhiên":
-                            resource_name = self.get_random_resource()
+                        # Fallback for old logic if no stocks selected
+                        selected = self.selected_stock.get()
+                        if selected == "Random":
+                            stock_symbol = self.get_random_stock()
                         else:
-                            resource_name = selected
+                            stock_symbol = selected
                         
-                    resource_id = self.resource_ids.get(resource_name)
-                    if not resource_id:
-                        self.log_system_message(f"LỖI_TÀI_NGUYÊN: Không tìm thấy ID tài nguyên {resource_name} trong bảng phân bổ")
+                    stock_id = self.stock_ids.get(stock_symbol)
+                    if not stock_id:
+                        self.log_trading_message(f"STOCK_ERROR: Stock ID not found for {stock_symbol} in trading table")
                         return
                     
-                    # Kiểm tra xem tài nguyên có được phân bổ không
-                    if self.allocated_resources and resource_id not in self.allocated_resources:
-                        self.log_system_message(f"LỖI_KHÔNG_CÓ: Tài nguyên {resource_name} không có sẵn trong kho hiện tại")
+                    # Check if stock is owned
+                    if self.owned_stocks and stock_id not in self.owned_stocks:
+                        self.log_trading_message(f"STOCK_UNAVAILABLE: Stock {stock_symbol} not available in current portfolio")
                         return
                     
-                    # Xử lý đếm ngược độ trễ thực thi
+                    # Handle execution delay countdown
                     try:
                         delay = int(self.execution_delay.get())
                         if delay > 0:
                             for i in range(delay, 0, -1):
-                                if not self.is_monitoring:
+                                if not self.is_trading_active:
                                     return
-                                self.log_system_message(f"ĐỘ_TRỄ_THỰC_THI: Đếm ngược phân bổ {i}ms cho {resource_name}...")
+                                self.log_trading_message(f"EXECUTION_DELAY: Countdown {i}ms for {stock_symbol} trade...")
                                 sleep(1)
                     except ValueError:
-                        delay = 0  # Nếu đầu vào không hợp lệ, sử dụng độ trễ 0
+                        delay = 0  # If invalid input, use 0 delay
                     
-                    # Phân bổ tài nguyên sử dụng điểm cuối đúng
-                    allocation_url = f'/lol-champ-select/v1/session/actions/{action["id"]}'
-                    allocation_data = {'championId': resource_id, 'completed': False}
+                    # Execute stock trade using correct endpoint
+                    trade_url = f'/lol-champ-select/v1/session/actions/{action["id"]}'
+                    trade_data = {'championId': stock_id, 'completed': False}
                     
-                    self.log_system_message(f"THỰC_THI_PHÂN_BỔ: Đang thực thi phân bổ tài nguyên cho {resource_name}...")
+                    self.log_trading_message(f"EXECUTING_TRADE: Executing trade for {stock_symbol}...")
                     
-                    r = self.request('patch', allocation_url, '', allocation_data)
+                    r = self.request('patch', trade_url, '', trade_data)
                     if r.status_code == 204:
-                        self.log_system_message(f"THÀNH_CÔNG_PHÂN_BỔ: Tài nguyên {resource_name} đã được phân bổ thành công")
+                        self.log_trading_message(f"TRADE_SUCCESS: Stock {stock_symbol} traded successfully")
                         
-                        # Đánh dấu là đã phân bổ trong phiên hiện tại để tránh phân bổ lại
-                        self.has_allocated_in_session = True
+                        # Mark as traded in current session to avoid re-trading
+                        self.has_traded_in_session = True
                         
-                        # Chức năng tự động khóa đã được xóa
                     else:
-                        self.log_system_message(f"LỖI_PHÂN_BỔ: Phân bổ tài nguyên {resource_name} thất bại - Trạng thái: {r.status_code}")
+                        self.log_trading_message(f"TRADE_ERROR: Trade for {stock_symbol} failed - Status: {r.status_code}")
                         if r.text:
-                            self.log_system_message(f"CHI_TIẾT_LỖI: Chi tiết lỗi phân bổ: {r.text}")
+                            self.log_trading_message(f"ERROR_DETAILS: Trade error details: {r.text}")
                         
         except Exception as e:
-            self.log_system_message(f"LỖI_XỬ_LÝ: Lỗi xử lý phân bổ tài nguyên: {str(e)}")
+            self.log_trading_message(f"TRADING_ERROR: Stock trading error: {str(e)}")
             
-    def detect_target_process(self):
-        """Phát hiện đường dẫn cài đặt tiến trình đích từ tiến trình LeagueClientUx.exe đang chạy"""
+    def detect_trading_platform(self):
+        """Detect trading platform installation path from running LeagueClientUx.exe process"""
         try:
             for proc in psutil.process_iter(['pid', 'name', 'exe']):
                 try:
                     if proc.info['name'] == 'LeagueClientUx.exe':
                         exe_path = proc.info['exe']
                         if exe_path:
-                            # Trích xuất thư mục cài đặt
-                            process_dir = os.path.dirname(exe_path)
-                            return process_dir
+                            # Extract installation directory
+                            platform_dir = os.path.dirname(exe_path)
+                            return platform_dir
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                     continue
         except Exception as e:
-            self.log_system_message(f"LỖI_PHÁT_HIỆN: Lỗi phát hiện tiến trình: {str(e)}")
+            self.log_trading_message(f"DETECTION_ERROR: Platform detection error: {str(e)}")
         return None
 
-    def wait_for_target_process(self):
-        """Chờ tiến trình đích khởi động bằng cách phát hiện tiến trình LeagueClientUx.exe"""
-        self.log_system_message("QUÉT_TIẾN_TRÌNH: Đang quét kích hoạt tiến trình đích...")
+    def wait_for_trading_platform(self):
+        """Wait for trading platform startup by detecting LeagueClientUx.exe process"""
+        self.log_trading_message("PLATFORM_SCAN: Scanning for trading platform activation...")
         
-        while self.is_monitoring:
-            # Thử phát hiện đường dẫn cài đặt tiến trình
-            process_dir = self.detect_target_process()
+        while self.is_trading_active:
+            # Try to detect platform installation path
+            platform_dir = self.detect_trading_platform()
             
-            if process_dir:
-                lockpath = os.path.join(process_dir, 'lockfile')
+            if platform_dir:
+                lockpath = os.path.join(platform_dir, 'lockfile')
                 if os.path.isfile(lockpath):
                     try:
                         with open(lockpath, 'r') as f:
@@ -780,7 +777,7 @@ class SystemProcessManager:
                         username = 'riot'
                         password = lock[3]
                         
-                        # Thiết lập phiên
+                        # Setup session
                         userpass = b64encode(f'{username}:{password}'.encode()).decode('ascii')
                         self.headers = {'Authorization': f'Basic {userpass}'}
                         self.session = requests.session()
@@ -788,32 +785,32 @@ class SystemProcessManager:
                         
                         return True
                     except Exception as e:
-                        self.log_system_message(f"LỖI_LOCKFILE: Lỗi xử lý lockfile: {str(e)}")
+                        self.log_trading_message(f"LOCKFILE_ERROR: Lockfile processing error: {str(e)}")
                 else:
-                    self.log_system_message("TIẾN_TRÌNH_MỘT_PHẦN: Đã phát hiện tiến trình nhưng lockfile không khả dụng, đang chờ...")
+                    self.log_trading_message("PARTIAL_PLATFORM: Platform detected but lockfile unavailable, waiting...")
             
             sleep(2)
         return False
         
     def wait_for_authentication(self):
-        """Chờ xác thực thành công"""
-        while self.is_monitoring:
+        """Wait for successful authentication"""
+        while self.is_trading_active:
             try:
                 r = self.request('get', '/lol-login/v1/session')
                 if r.status_code == 200:
                     session_data = r.json()
                     if session_data['state'] == 'SUCCEEDED':
-                        self.process_id = session_data['summonerId']
+                        self.trader_id = session_data['summonerId']
                         return True
                     else:
-                        self.log_system_message(f"TIẾN_TRÌNH_XÁC_THỰC: Xác thực đang tiến hành... ({session_data['state']})")
+                        self.log_trading_message(f"AUTH_PROGRESS: Authentication in progress... ({session_data['state']})")
             except Exception:
                 pass
             sleep(1)
         return False
         
     def request(self, method, path, query='', data=''):
-        """Thực hiện yêu cầu API đến điểm cuối tiến trình"""
+        """Make API request to platform endpoint"""
         if not query:
             url = f'{self.protocol}://{self.host}:{self.port}{path}'
         else:
@@ -828,10 +825,10 @@ class SystemProcessManager:
             
         return r
         
-    def get_allocated_resources(self):
-        """Lấy danh sách tài nguyên đã phân bổ - Kiểm tra tương thích hệ thống"""
+    def get_owned_stocks(self):
+        """Get list of owned stocks - Portfolio compatibility check"""
         try:
-            # Thử các điểm cuối API khác nhau để xác thực dữ liệu tài nguyên
+            # Try different API endpoints to verify portfolio data
             endpoints = [
                 '/lol-champions/v1/owned-champions-minimal',
                 '/lol-champions/v1/inventories/1/champions-minimal', 
@@ -840,126 +837,126 @@ class SystemProcessManager:
                 '/lol-collections/v1/inventories/CHAMPION'
             ]
             
-            self.allocated_resources = []
+            self.owned_stocks = []
             
             for endpoint in endpoints:
                 try:
                     r = self.request('get', endpoint)
                     if r.status_code == 200:
-                        allocated = r.json()
-                        if isinstance(allocated, list):
-                            # Trích xuất ID tài nguyên từ các định dạng phản hồi khác nhau
-                            for resource in allocated:
-                                if isinstance(resource, dict):
-                                    # Thử các khóa có thể cho ID tài nguyên
-                                    resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
-                                    if resource_id and resource.get('active', True):
-                                        self.allocated_resources.append(resource_id)
-                        elif isinstance(allocated, dict) and 'champions' in allocated:
-                            # Xử lý định dạng phản hồi lồng nhau
-                            for resource in allocated['champions']:
-                                resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
-                                if resource_id and resource.get('active', True):
-                                    self.allocated_resources.append(resource_id)
+                        owned = r.json()
+                        if isinstance(owned, list):
+                            # Extract stock IDs from different response formats
+                            for stock in owned:
+                                if isinstance(stock, dict):
+                                    # Try different possible keys for stock ID
+                                    stock_id = stock.get('id') or stock.get('championId') or stock.get('itemId')
+                                    if stock_id and stock.get('active', True):
+                                        self.owned_stocks.append(stock_id)
+                        elif isinstance(owned, dict) and 'champions' in owned:
+                            # Handle nested response format
+                            for stock in owned['champions']:
+                                stock_id = stock.get('id') or stock.get('championId') or stock.get('itemId')
+                                if stock_id and stock.get('active', True):
+                                    self.owned_stocks.append(stock_id)
                         
-                        if self.allocated_resources:
-                            self.log_system_message(f"KÍCH_THƯỚC_KHO: Kho phân bổ tài nguyên chứa {len(self.allocated_resources)} tài nguyên")
+                        if self.owned_stocks:
+                            self.log_trading_message(f"PORTFOLIO_SIZE: Portfolio contains {len(self.owned_stocks)} stocks")
                             break
                             
                 except Exception as e:
-                    self.log_system_message(f"CẢNH_BÁO_ĐIỂM_CUỐI: Xác thực điểm cuối {endpoint} thất bại: {str(e)}")
+                    self.log_trading_message(f"ENDPOINT_WARNING: Endpoint {endpoint} verification failed: {str(e)}")
                     continue
             
-            # Kiểm tra phân bổ tài nguyên đã chọn với logic cải tiến
-            if self.selected_resource_names and len(self.selected_resource_names) > 1:
-                # Nhiều tài nguyên được chọn cho phân bổ động - hiển thị thông điệp kết hợp
-                self.log_system_message(f"SẴN_SÀNG_PHÂN_BỔ: Đang chờ giai đoạn phân bổ cho kho động ({len(self.selected_resource_names)} tài nguyên)...")
-            elif self.selected_resource_names and len(self.selected_resource_names) == 1:
-                # Tài nguyên đơn - kiểm tra phân bổ
-                resource_name = self.selected_resource_names[0]
-                is_allocated = self.check_resource_allocation_improved(resource_name)
-                if not is_allocated:
+            # Check selected stock ownership with improved logic
+            if self.selected_stock_symbols and len(self.selected_stock_symbols) > 1:
+                # Multiple stocks selected for dynamic trading - show combined message
+                self.log_trading_message(f"READY_FOR_TRADING: Waiting for trading phase for dynamic portfolio ({len(self.selected_stock_symbols)} stocks)...")
+            elif self.selected_stock_symbols and len(self.selected_stock_symbols) == 1:
+                # Single stock - check ownership
+                stock_symbol = self.selected_stock_symbols[0]
+                is_owned = self.check_stock_ownership_improved(stock_symbol)
+                if not is_owned:
                     return False
                 else:
-                    self.log_system_message(f"SẴN_SÀNG_PHÂN_BỔ: Đang chờ giai đoạn phân bổ cho tài nguyên {resource_name}...")
+                    self.log_trading_message(f"READY_FOR_TRADING: Waiting for trading phase for stock {stock_symbol}...")
             else:
-                # Fallback cho logic cũ cho lựa chọn không ngẫu nhiên
-                selected = self.selected_resource.get()
-                if selected and selected != "Ngẫu_nhiên":
-                    is_allocated = self.check_resource_allocation_improved(selected)
-                    if not is_allocated:
+                # Fallback for old logic for non-random selection
+                selected = self.selected_stock.get()
+                if selected and selected != "Random":
+                    is_owned = self.check_stock_ownership_improved(selected)
+                    if not is_owned:
                         return False
                     else:
-                        self.log_system_message(f"SẴN_SÀNG_PHÂN_BỔ: Đang chờ giai đoạn phân bổ cho tài nguyên {selected}...")
+                        self.log_trading_message(f"READY_FOR_TRADING: Waiting for trading phase for stock {selected}...")
                     
             return True
             
         except Exception as e:
-            self.log_system_message(f"LỖI_KHO: Lỗi truy xuất kho tài nguyên: {str(e)}")
-            # Tiếp tục mà không kiểm tra phân bổ nhưng cảnh báo người dùng
-            self.log_system_message("CẢNH_BÁO_BỎ_QUA: Tiếp tục với phân bổ trực tiếp mà không xác thực kho")
-            self.allocated_resources = []
+            self.log_trading_message(f"PORTFOLIO_ERROR: Portfolio retrieval error: {str(e)}")
+            # Continue without ownership check but warn user
+            self.log_trading_message("WARNING_BYPASS: Continuing with direct trading without portfolio verification")
+            self.owned_stocks = []
             return True
 
-    def check_resource_allocation_improved(self, resource_name):
-        """Kiểm tra phân bổ tài nguyên cải tiến cho tương thích hệ thống"""
+    def check_stock_ownership_improved(self, stock_symbol):
+        """Improved stock ownership check for platform compatibility"""
         try:
-            # Đầu tiên thử tìm tài nguyên theo tên trong tất cả tài nguyên có sẵn
-            correct_id = self.find_resource_id_by_name(resource_name)
+            # First try to find stock by name in all available stocks
+            correct_id = self.find_stock_id_by_name(stock_symbol)
             
             if correct_id:
-                self.resource_ids[resource_name] = correct_id
+                self.stock_ids[stock_symbol] = correct_id
                 
-                # Kiểm tra xem chúng ta có phân bổ tài nguyên này không
-                if correct_id in self.allocated_resources:
-                    self.log_system_message(f"XÁC_NHẬN_TÀI_NGUYÊN: Đã xác nhận phân bổ tài nguyên {resource_name}")
+                # Check if we own this stock
+                if correct_id in self.owned_stocks:
+                    self.log_trading_message(f"STOCK_CONFIRMED: Confirmed ownership of stock {stock_symbol}")
                     return True
             
-            # Fallback: Kiểm tra ID chính và thay thế
-            primary_id = self.resource_ids.get(resource_name)
-            if primary_id and primary_id in self.allocated_resources:
-                self.log_system_message(f"XÁC_NHẬN_TÀI_NGUYÊN: Đã xác nhận phân bổ tài nguyên {resource_name}")
+            # Fallback: Check primary and alternative IDs
+            primary_id = self.stock_ids.get(stock_symbol)
+            if primary_id and primary_id in self.owned_stocks:
+                self.log_trading_message(f"STOCK_CONFIRMED: Confirmed ownership of stock {stock_symbol}")
                 return True
             
-            # Kiểm tra ID thay thế nếu có sẵn
-            alt_ids = self.alternative_resource_ids.get(resource_name, [])
+            # Check alternative IDs if available
+            alt_ids = self.alternative_stock_ids.get(stock_symbol, [])
             for alt_id in alt_ids:
-                if alt_id in self.allocated_resources:
-                    self.log_system_message(f"XÁC_NHẬN_TÀI_NGUYÊN: Đã xác nhận phân bổ tài nguyên {resource_name}")
-                    self.resource_ids[resource_name] = alt_id
+                if alt_id in self.owned_stocks:
+                    self.log_trading_message(f"STOCK_CONFIRMED: Confirmed ownership of stock {stock_symbol}")
+                    self.stock_ids[stock_symbol] = alt_id
                     return True
             
-            # Phương án cuối cùng: Thử gọi API trực tiếp
+            # Last resort: Try direct API call
             try:
                 if primary_id:
                     r = self.request('get', f'/lol-champions/v1/champions/{primary_id}')
                     if r.status_code == 200:
-                        resource_info = r.json()
-                        if resource_info.get('ownership', {}).get('owned', False):
-                            self.log_system_message(f"XÁC_NHẬN_API: Đã xác nhận phân bổ tài nguyên {resource_name} qua API")
+                        stock_info = r.json()
+                        if stock_info.get('ownership', {}).get('owned', False):
+                            self.log_trading_message(f"API_CONFIRMED: Confirmed stock ownership for {stock_symbol} via API")
                             return True
             except:
                 pass
             
-            # Nếu không tìm thấy phân bổ, hiển thị thông tin gỡ lỗi chi tiết
-            self.log_system_message(f"LỖI_CHƯA_PHÂN_BỔ: Không tìm thấy tài nguyên {resource_name} trong kho phân bổ")
-            self.log_system_message(f"TRẠNG_THÁI_KHO: Tổng tài nguyên đã phân bổ: {len(self.allocated_resources)}")
+            # If no ownership found, show detailed debug info
+            self.log_trading_message(f"STOCK_NOT_OWNED: Stock {stock_symbol} not found in portfolio")
+            self.log_trading_message(f"PORTFOLIO_STATUS: Total owned stocks: {len(self.owned_stocks)}")
             
-            self.root.after(0, self.stop_system_monitoring)
+            self.root.after(0, self.stop_trading_system)
             return False
             
         except Exception as e:
-            self.log_system_message(f"LỖI_KIỂM_TRA_PHÂN_BỔ: Lỗi kiểm tra phân bổ tài nguyên cho {resource_name}: {str(e)}")
+            self.log_trading_message(f"OWNERSHIP_CHECK_ERROR: Ownership check error for {stock_symbol}: {str(e)}")
             return False
 
-    def find_resource_id_by_name(self, resource_name):
-        """Tìm ID tài nguyên bằng cách tìm kiếm qua tất cả tài nguyên có sẵn"""
+    def find_stock_id_by_name(self, stock_symbol):
+        """Find stock ID by searching through all available stocks"""
         try:
-            # Bây giờ resource_name là số (1, 2, 3...), trực tiếp lấy từ resource_ids
-            if resource_name in self.resource_ids:
-                return self.resource_ids[resource_name]
+            # Now stock_symbol is a symbol (AAPL, MSFT, etc.), directly get from stock_ids
+            if stock_symbol in self.stock_ids:
+                return self.stock_ids[stock_symbol]
             
-            # Fallback: thử các điểm cuối khác nhau để lấy tất cả tài nguyên
+            # Fallback: try different endpoints to get all stocks
             endpoints = [
                 '/lol-champions/v1/champions',
                 '/lol-game-data/assets/v1/champions.json',
@@ -970,25 +967,25 @@ class SystemProcessManager:
                 try:
                     r = self.request('get', endpoint)
                     if r.status_code == 200:
-                        resources_data = r.json()
+                        stocks_data = r.json()
                         
-                        if isinstance(resources_data, list):
-                            for resource in resources_data:
-                                if isinstance(resource, dict):
-                                    resource_name_api = resource.get('name', '').lower()
-                                    if resource_name.lower() in resource_name_api or resource_name_api in resource_name.lower():
-                                        resource_id = resource.get('id') or resource.get('championId')
-                                        if resource_id:
-                                            return resource_id
-                        elif isinstance(resources_data, dict):
-                            # Xử lý dữ liệu lồng nhau
-                            for key, resource in resources_data.items():
-                                if isinstance(resource, dict):
-                                    resource_name_api = resource.get('name', '').lower()
-                                    if resource_name.lower() in resource_name_api or resource_name_api in resource_name.lower():
-                                        resource_id = resource.get('id') or resource.get('championId') or key
-                                        if resource_id and str(resource_id).isdigit():
-                                            return int(resource_id)
+                        if isinstance(stocks_data, list):
+                            for stock in stocks_data:
+                                if isinstance(stock, dict):
+                                    stock_name_api = stock.get('name', '').lower()
+                                    if stock_symbol.lower() in stock_name_api or stock_name_api in stock_symbol.lower():
+                                        stock_id = stock.get('id') or stock.get('championId')
+                                        if stock_id:
+                                            return stock_id
+                        elif isinstance(stocks_data, dict):
+                            # Handle nested data
+                            for key, stock in stocks_data.items():
+                                if isinstance(stock, dict):
+                                    stock_name_api = stock.get('name', '').lower()
+                                    if stock_symbol.lower() in stock_name_api or stock_name_api in stock_symbol.lower():
+                                        stock_id = stock.get('id') or stock.get('championId') or key
+                                        if stock_id and str(stock_id).isdigit():
+                                            return int(stock_id)
                                             
                 except Exception:
                     continue
@@ -996,83 +993,83 @@ class SystemProcessManager:
             return None
             
         except Exception as e:
-            self.log_system_message(f"CẢNH_BÁO_TÌM_KIẾM: Lỗi tìm kiếm ID tài nguyên: {str(e)}")
+            self.log_trading_message(f"SEARCH_WARNING: Stock ID search error: {str(e)}")
             return None
 
     def set_process_priority(self):
-        """Đặt ưu tiên cao cho tiến trình đích"""
+        """Set high priority for target process"""
         try:
             for p in psutil.process_iter():
                 try:
                     if p.name() == 'League of Legends.exe':
                         p.nice(psutil.HIGH_PRIORITY_CLASS)
-                        self.log_system_message("ĐẶT_ƯU_TIÊN: Đã gán ưu tiên cao cho tiến trình đích")
+                        self.log_trading_message("PRIORITY_SET: High priority assigned to target process")
                         break
                 except (psutil.AccessDenied, psutil.ZombieProcess):
                     pass
         except Exception:
             pass
 
-    def open_resource_selection_dialog(self):
-        """Mở hộp thoại cấu hình lựa chọn tài nguyên"""
+    def open_stock_selection_dialog(self):
+        """Open stock portfolio configuration dialog"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Bảng Điều Khiển Cấu Hình Tài Nguyên")
-        dialog.geometry("500x550")
+        dialog.title("Portfolio Configuration Panel")
+        dialog.geometry("550x600")
         dialog.resizable(False, False)
-        dialog.configure(bg='#2d2d2d')
+        dialog.configure(bg='#1a2332')
         
-        # Xóa biểu tượng cửa sổ cho dialog
+        # Remove window icon for dialog
         try:
             dialog.iconbitmap('')
         except:
             pass
         
-        # Căn giữa dialog
+        # Center dialog
         dialog.transient(self.root)
         dialog.grab_set()
         
-        # Lấy tài nguyên có sẵn - tất cả tài nguyên từ danh sách
-        available_resources = list(self.resource_ids.keys())
-        # Sắp xếp theo số thay vì theo bảng chữ cái
-        available_resources.sort(key=lambda x: int(x) if x.isdigit() else 0)
+        # Get available stocks - all stocks from the list
+        available_stocks = list(self.stock_ids.keys())
+        # Sort alphabetically
+        available_stocks.sort()
         
-        # Tạo biến tài nguyên trước
-        resource_vars = {}
-        for resource in available_resources:
-            var = tk.BooleanVar(value=resource in self.selected_resource_names)
-            resource_vars[resource] = var
+        # Create stock variables first
+        stock_vars = {}
+        for stock in available_stocks:
+            var = tk.BooleanVar(value=stock in self.selected_stock_symbols)
+            stock_vars[stock] = var
         
-        # Khung chính
-        main_frame = tk.Frame(dialog, bg='#2d2d2d')
-        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        # Main frame
+        main_frame = tk.Frame(dialog, bg='#1a2332')
+        main_frame.pack(fill='both', expand=True, padx=25, pady=25)
         
-        # Tiêu đề
-        title_label = tk.Label(main_frame, text="🔧 Bảng Điều Khiển Cấu Hình Tài Nguyên", 
-                             bg='#2d2d2d', fg='#00d4aa', font=('Segoe UI', 14, 'bold'))
-        title_label.pack(pady=(0, 15))
+        # Title
+        title_label = tk.Label(main_frame, text="🔧 Portfolio Configuration Panel", 
+                             bg='#1a2332', fg='#00d4aa', font=('Segoe UI', 16, 'bold'))
+        title_label.pack(pady=(0, 20))
         
-        # Khung nút điều khiển
-        control_frame = tk.Frame(main_frame, bg='#2d2d2d')
-        control_frame.pack(fill='x', pady=(0, 10))
+        # Control buttons frame
+        control_frame = tk.Frame(main_frame, bg='#1a2332')
+        control_frame.pack(fill='x', pady=(0, 15))
         
-        select_all_btn = tk.Button(control_frame, text="Chọn Tất Cả",
-                                 command=lambda: self.select_all_resources(resource_vars),
-                                 font=('Segoe UI', 10), bg='#00cc44', fg='white',
+        select_all_btn = tk.Button(control_frame, text="Select All",
+                                 command=lambda: self.select_all_stocks(stock_vars),
+                                 font=('Segoe UI', 11), bg='#00cc44', fg='white',
                                  activebackground='#00b33c', relief='raised', bd=2)
         select_all_btn.pack(side='left')
         
-        deselect_all_btn = tk.Button(control_frame, text="Xóa Tất Cả",
-                                   command=lambda: self.deselect_all_resources(resource_vars),
-                                   font=('Segoe UI', 10), bg='#ff4444', fg='white',
+        deselect_all_btn = tk.Button(control_frame, text="Clear All",
+                                   command=lambda: self.deselect_all_stocks(stock_vars),
+                                   font=('Segoe UI', 11), bg='#ff4444', fg='white',
                                    activebackground='#cc3333', relief='raised', bd=2)
-        deselect_all_btn.pack(side='left', padx=(10, 0))
+        deselect_all_btn.pack(side='left', padx=(15, 0))
         
-        # Khung danh sách tài nguyên với thanh cuộn
-        list_frame = tk.Frame(main_frame, bg='#2d2d2d')
-        list_frame.pack(fill='both', expand=True, pady=(0, 15))
+        # Stock list frame with scrollbar
+        list_frame = tk.Frame(main_frame, bg='#1a2332')
+        list_frame.pack(fill='both', expand=True, pady=(0, 20))
         
-        # Canvas và thanh cuộn cho danh sách tài nguyên
-        canvas = tk.Canvas(list_frame, bg='#404040', highlightthickness=0, height=120)
+        # Canvas and scrollbar for stock list
+        canvas = tk.Canvas(list_frame, bg='#404040', highlightthickness=0, height=150)
         scrollbar = ttk.Scrollbar(list_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg='#404040')
         
@@ -1084,7 +1081,7 @@ class SystemProcessManager:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        # Bật cuộn chuột
+        # Enable mouse wheel scrolling
         def _on_mousewheel(event):
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         
@@ -1097,266 +1094,266 @@ class SystemProcessManager:
         canvas.bind('<Enter>', _bind_mousewheel)
         canvas.bind('<Leave>', _unbind_mousewheel)
         
-        # Tạo checkbox tài nguyên
-        for i, resource in enumerate(available_resources):
-            var = resource_vars[resource]
+        # Create stock checkboxes
+        for i, stock in enumerate(available_stocks):
+            var = stock_vars[stock]
             
-            cb = tk.Checkbutton(scrollable_frame, text=resource, variable=var,
-                              bg='#404040', fg='#ffffff', font=('Segoe UI', 11),
+            cb = tk.Checkbutton(scrollable_frame, text=stock, variable=var,
+                              bg='#404040', fg='#ffffff', font=('Segoe UI', 12),
                               activebackground='#555555', selectcolor='#0066cc',
-                              anchor='w', padx=5)
-            cb.pack(anchor='w', padx=10, pady=5, fill='x')
+                              anchor='w', padx=8)
+            cb.pack(anchor='w', padx=15, pady=6, fill='x')
         
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Thông tin lựa chọn
-        info_frame = tk.Frame(main_frame, bg='#2d2d2d')
-        info_frame.pack(fill='x', pady=(0, 15))
+        # Info frame
+        info_frame = tk.Frame(main_frame, bg='#1a2332')
+        info_frame.pack(fill='x', pady=(0, 20))
         
-        info_label = tk.Label(info_frame, text="💡 Cấu hình tài nguyên cho phân bổ động. Đối với kho >3 tài nguyên, hệ thống sẽ yêu cầu xác nhận.",
-                            bg='#2d2d2d', fg='#ff9500', font=('Segoe UI', 9), wraplength=400)
+        info_label = tk.Label(info_frame, text="💡 Configure stocks for dynamic trading. For portfolios >3 stocks, system will require confirmation.",
+                            bg='#1a2332', fg='#ff9500', font=('Segoe UI', 10), wraplength=450)
         info_label.pack()
         
-        # Nút dưới cùng
-        button_frame = tk.Frame(main_frame, bg='#2d2d2d')
-        button_frame.pack(fill='x', pady=(10, 0))
+        # Bottom buttons
+        button_frame = tk.Frame(main_frame, bg='#1a2332')
+        button_frame.pack(fill='x', pady=(15, 0))
         
-        # Nút hủy bên trái
-        cancel_btn = tk.Button(button_frame, text="❌ HỦY",
+        # Cancel button on left
+        cancel_btn = tk.Button(button_frame, text="❌ CANCEL",
                              command=dialog.destroy,
-                             font=('Segoe UI', 11), bg='#ff4444', fg='white',
-                             activebackground='#cc3333', relief='raised', bd=3, padx=20, pady=5)
+                             font=('Segoe UI', 12), bg='#ff4444', fg='white',
+                             activebackground='#cc3333', relief='raised', bd=3, padx=25, pady=8)
         cancel_btn.pack(side='left')
         
-        # Nút xác nhận bên phải - làm nổi bật hơn
-        confirm_btn = tk.Button(button_frame, text="✅ ÁP DỤNG CẤU HÌNH",
-                              command=lambda: self.confirm_resource_selection(dialog, resource_vars, available_resources),
-                              font=('Segoe UI', 11, 'bold'), bg='#00cc44', fg='white',
-                              activebackground='#00b33c', relief='raised', bd=4, padx=25, pady=8)
+        # Confirm button on right - more prominent
+        confirm_btn = tk.Button(button_frame, text="✅ APPLY CONFIGURATION",
+                              command=lambda: self.confirm_stock_selection(dialog, stock_vars, available_stocks),
+                              font=('Segoe UI', 12, 'bold'), bg='#00cc44', fg='white',
+                              activebackground='#00b33c', relief='raised', bd=4, padx=30, pady=10)
         confirm_btn.pack(side='right')
         
-    def select_all_resources(self, resource_vars):
-        """Chọn tất cả tài nguyên trong dialog"""
-        for var in resource_vars.values():
+    def select_all_stocks(self, stock_vars):
+        """Select all stocks in dialog"""
+        for var in stock_vars.values():
             var.set(True)
     
-    def deselect_all_resources(self, resource_vars):
-        """Bỏ chọn tất cả tài nguyên trong dialog"""
-        for var in resource_vars.values():
+    def deselect_all_stocks(self, stock_vars):
+        """Deselect all stocks in dialog"""
+        for var in stock_vars.values():
             var.set(False)
     
-    def confirm_resource_selection(self, dialog, resource_vars, available_resources):
-        """Xác nhận lựa chọn tài nguyên và cập nhật hiển thị"""
-        selected = [resource for resource, var in resource_vars.items() if var.get()]
+    def confirm_stock_selection(self, dialog, stock_vars, available_stocks):
+        """Confirm stock selection and update display"""
+        selected = [stock for stock, var in stock_vars.items() if var.get()]
         
         if not selected:
-            messagebox.showwarning("Cảnh Báo Cấu Hình", "Vui lòng cấu hình ít nhất một tài nguyên!")
+            messagebox.showwarning("Configuration Warning", "Please configure at least one stock!")
             return
         
-        # Đóng dialog cấu hình trước
+        # Close configuration dialog first
         dialog.destroy()
         
-        # Xử lý lựa chọn tài nguyên đơn
+        # Handle single stock selection
         if len(selected) == 1:
-            resource = selected[0]
-            self.selected_resource_names = selected
-            self.update_resources_display()
+            stock = selected[0]
+            self.selected_stock_symbols = selected
+            self.update_portfolio_display()
             
-            # Kiểm tra phân bổ ngay lập tức cho tài nguyên đơn
+            # Check ownership immediately for single stock
             if self.is_connected and self.session and self.headers:
-                self.check_single_resource_allocation(resource)
+                self.check_single_stock_ownership(stock)
             else:
-                self.log_system_message(f"ĐẶT_CẤU_HÌNH: Đã cấu hình tài nguyên {resource}. Kết nối với hệ thống để xác thực phân bổ.")
+                self.log_trading_message(f"CONFIG_SET: Configured stock {stock}. Connect to platform to verify ownership.")
         
-        # Xử lý lựa chọn nhiều tài nguyên
+        # Handle multiple stock selection
         else:
-            self.selected_resource_names = selected
-            self.update_resources_display()
+            self.selected_stock_symbols = selected
+            self.update_portfolio_display()
             
             if self.is_connected and self.session and self.headers:
-                # Hiển thị đang tải và kiểm tra tất cả tài nguyên
-                self.check_multiple_resources_allocation(selected)
+                # Show loading and check all stocks
+                self.check_multiple_stocks_ownership(selected)
             else:
                 if len(selected) <= 3:
-                    self.log_system_message(f"ĐẶT_CẤU_HÌNH: Đã cấu hình {len(selected)} tài nguyên: {', '.join(selected)}")
+                    self.log_trading_message(f"CONFIG_SET: Configured {len(selected)} stocks: {', '.join(selected)}")
                 else:
-                    self.log_system_message(f"ĐẶT_CẤU_HÌNH: Đã cấu hình {len(selected)} tài nguyên cho phân bổ động")
-                self.log_system_message("SẴN_SÀNG_HỆ_THỐNG: Kết nối với hệ thống để xác thực phân bổ")
+                    self.log_trading_message(f"CONFIG_SET: Configured {len(selected)} stocks for dynamic trading")
+                self.log_trading_message("SYSTEM_READY: Connect to platform to verify ownership")
     
-    def update_resources_display(self):
-        """Cập nhật hiển thị tài nguyên"""
-        if not self.selected_resource_names:
-            self.resources_label.config(text="Chưa cấu hình tài nguyên")
+    def update_portfolio_display(self):
+        """Update portfolio display"""
+        if not self.selected_stock_symbols:
+            self.portfolio_label.config(text="No stocks configured")
             return
         
-        # Xử lý các trường hợp hiển thị khác nhau dựa trên số lượng tài nguyên
-        resource_count = len(self.selected_resource_names)
+        # Handle different display cases based on number of stocks
+        stock_count = len(self.selected_stock_symbols)
         
-        if resource_count == 1:
-            display_text = f"Đã cấu hình: {self.selected_resource_names[0]}"
-        elif resource_count <= 3:
-            display_text = f"Kho động ({resource_count}): {', '.join(self.selected_resource_names)}"
+        if stock_count == 1:
+            display_text = f"Configured: {self.selected_stock_symbols[0]}"
+        elif stock_count <= 3:
+            display_text = f"Dynamic portfolio ({stock_count}): {', '.join(self.selected_stock_symbols)}"
         else:
-            first_three = ', '.join(self.selected_resource_names[:3])
-            remaining = resource_count - 3
-            display_text = f"Kho động ({resource_count}): {first_three}... (+{remaining} khác)"
+            first_three = ', '.join(self.selected_stock_symbols[:3])
+            remaining = stock_count - 3
+            display_text = f"Dynamic portfolio ({stock_count}): {first_three}... (+{remaining} more)"
         
-        self.resources_label.config(text=display_text)
+        self.portfolio_label.config(text=display_text)
     
-    def check_single_resource_allocation(self, resource_name):
-        """Kiểm tra phân bổ cho tài nguyên đơn"""
+    def check_single_stock_ownership(self, stock_symbol):
+        """Check ownership for single stock"""
         try:
-            # Lấy tài nguyên đã phân bổ trước
-            allocated_resources = self.get_allocated_resources_list()
-            if not allocated_resources:
-                self.log_system_message(f"CẢNH_BÁO_XÁC_THỰC: Không thể xác thực tài nguyên {resource_name}")
+            # Get owned stocks first
+            owned_stocks = self.get_owned_stocks_list()
+            if not owned_stocks:
+                self.log_trading_message(f"VERIFICATION_WARNING: Unable to verify stock {stock_symbol}")
                 return
                 
-            # Kiểm tra phân bổ
-            primary_id = self.resource_ids.get(resource_name)
-            alt_ids = self.alternative_resource_ids.get(resource_name, [])
+            # Check ownership
+            primary_id = self.stock_ids.get(stock_symbol)
+            alt_ids = self.alternative_stock_ids.get(stock_symbol, [])
             all_ids_to_check = [primary_id] + alt_ids if primary_id else alt_ids
             
-            resource_found = False
-            for resource_id in all_ids_to_check:
-                if resource_id and resource_id in allocated_resources:
-                    resource_found = True
+            stock_found = False
+            for stock_id in all_ids_to_check:
+                if stock_id and stock_id in owned_stocks:
+                    stock_found = True
                     break
                     
-            if resource_found:
-                self.log_system_message(f"ĐÃ_XÁC_THỰC_TÀI_NGUYÊN: Đã xác thực phân bổ tài nguyên {resource_name}")
+            if stock_found:
+                self.log_trading_message(f"STOCK_VERIFIED: Verified ownership of stock {stock_symbol}")
             else:
-                self.log_system_message(f"LỖI_XÁC_THỰC: Không tìm thấy tài nguyên {resource_name} trong kho phân bổ hiện tại")
+                self.log_trading_message(f"VERIFICATION_ERROR: Stock {stock_symbol} not found in current portfolio")
                 
         except Exception as e:
-            self.log_system_message(f"LỖI_XÁC_THỰC: Lỗi xác thực tài nguyên {resource_name}: {str(e)}")
+            self.log_trading_message(f"VERIFICATION_ERROR: Stock verification for {stock_symbol} failed: {str(e)}")
     
-    def check_multiple_resources_allocation(self, resources_list):
-        """Kiểm tra phân bổ cho nhiều tài nguyên với đang tải"""
-        # Hiển thị đang tải
-        self.loading_frame.pack(pady=(10, 0))
+    def check_multiple_stocks_ownership(self, stocks_list):
+        """Check ownership for multiple stocks with loading"""
+        # Show loading
+        self.loading_frame.pack(pady=(15, 0))
         
-        # Bắt đầu kiểm tra trong luồng nền
-        check_thread = threading.Thread(target=self._check_resources_thread, args=(resources_list,), daemon=True)
+        # Start check in background thread
+        check_thread = threading.Thread(target=self._check_stocks_thread, args=(stocks_list,), daemon=True)
         check_thread.start()
     
-    def _check_resources_thread(self, resources_list):
-        """Luồng nền để kiểm tra phân bổ tài nguyên"""
+    def _check_stocks_thread(self, stocks_list):
+        """Background thread to check stock ownership"""
         try:
-            # Lấy tài nguyên đã phân bổ
-            allocated_resources = self.get_allocated_resources_list()
-            if not allocated_resources:
+            # Get owned stocks
+            owned_stocks = self.get_owned_stocks_list()
+            if not owned_stocks:
                 self.root.after(0, self._hide_loading)
-                self.root.after(0, lambda: self.log_system_message("CẢNH_BÁO_XÁC_THỰC: Không thể xác thực kho tài nguyên"))
+                self.root.after(0, lambda: self.log_trading_message("VERIFICATION_WARNING: Unable to verify portfolio"))
                 return
             
-            # Kiểm tra từng tài nguyên
-            missing_resources = []
-            for resource_name in resources_list:
-                primary_id = self.resource_ids.get(resource_name)
-                alt_ids = self.alternative_resource_ids.get(resource_name, [])
+            # Check each stock
+            missing_stocks = []
+            for stock_symbol in stocks_list:
+                primary_id = self.stock_ids.get(stock_symbol)
+                alt_ids = self.alternative_stock_ids.get(stock_symbol, [])
                 all_ids_to_check = [primary_id] + alt_ids if primary_id else alt_ids
                 
-                resource_found = False
-                for resource_id in all_ids_to_check:
-                    if resource_id and resource_id in allocated_resources:
-                        resource_found = True
+                stock_found = False
+                for stock_id in all_ids_to_check:
+                    if stock_id and stock_id in owned_stocks:
+                        stock_found = True
                         break
                         
-                if not resource_found:
-                    missing_resources.append(resource_name)
+                if not stock_found:
+                    missing_stocks.append(stock_symbol)
             
-            # Ẩn đang tải và hiển thị kết quả
+            # Hide loading and show results
             self.root.after(0, self._hide_loading)
             
-            if missing_resources:
-                # Hiển thị dialog tài nguyên thiếu
-                self.root.after(0, lambda: self._show_missing_resources_dialog(missing_resources))
+            if missing_stocks:
+                # Show missing stocks dialog
+                self.root.after(0, lambda: self._show_missing_stocks_dialog(missing_stocks))
             else:
-                # Tất cả tài nguyên đã được phân bổ
-                if len(resources_list) <= 3:
-                    self.root.after(0, lambda: self.log_system_message(f"ĐÃ_XÁC_THỰC_KHO: Kho động đã được cấu hình thành công: {', '.join(resources_list)}"))
+                # All stocks owned
+                if len(stocks_list) <= 3:
+                    self.root.after(0, lambda: self.log_trading_message(f"PORTFOLIO_VERIFIED: Dynamic portfolio configured successfully: {', '.join(stocks_list)}"))
                 else:
-                    self.root.after(0, lambda: self.log_system_message(f"ĐÃ_XÁC_THỰC_KHO: Kho động đã được cấu hình thành công ({len(resources_list)} tài nguyên)"))
+                    self.root.after(0, lambda: self.log_trading_message(f"PORTFOLIO_VERIFIED: Dynamic portfolio configured successfully ({len(stocks_list)} stocks)"))
                     
         except Exception as e:
             self.root.after(0, self._hide_loading)
-            self.root.after(0, lambda: self.log_system_message(f"LỖI_XÁC_THỰC: Lỗi xác thực kho: {str(e)}"))
+            self.root.after(0, lambda: self.log_trading_message(f"VERIFICATION_ERROR: Portfolio verification error: {str(e)}"))
     
     def _hide_loading(self):
-        """Ẩn chỉ báo đang tải"""
+        """Hide loading indicator"""
         self.loading_frame.pack_forget()
     
-    def _show_missing_resources_dialog(self, missing_resources):
-        """Hiển thị dialog cho tài nguyên thiếu"""
+    def _show_missing_stocks_dialog(self, missing_stocks):
+        """Show dialog for missing stocks"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Cảnh Báo Xác Thực Tài Nguyên")
-        dialog.geometry("450x220")
+        dialog.title("Portfolio Verification Warning")
+        dialog.geometry("500x250")
         dialog.resizable(False, False)
-        dialog.configure(bg='#2d2d2d')
+        dialog.configure(bg='#1a2332')
         
-        # Xóa biểu tượng cửa sổ
+        # Remove window icon
         try:
             dialog.iconbitmap('')
         except:
             pass
         
-        # Căn giữa dialog
+        # Center dialog
         dialog.transient(self.root)
         dialog.grab_set()
         
-        # Khung chính
-        main_frame = tk.Frame(dialog, bg='#2d2d2d')
-        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        # Main frame
+        main_frame = tk.Frame(dialog, bg='#1a2332')
+        main_frame.pack(fill='both', expand=True, padx=25, pady=25)
         
-        # Biểu tượng cảnh báo và tiêu đề
-        title_frame = tk.Frame(main_frame, bg='#2d2d2d')
-        title_frame.pack(pady=(0, 15))
+        # Warning icon and title
+        title_frame = tk.Frame(main_frame, bg='#1a2332')
+        title_frame.pack(pady=(0, 20))
         
-        title_label = tk.Label(title_frame, text="⚠️ Cảnh Báo Phân Bổ Tài Nguyên", 
-                             bg='#2d2d2d', fg='#ff4444', font=('Segoe UI', 14, 'bold'))
+        title_label = tk.Label(title_frame, text="⚠️ Portfolio Verification Warning", 
+                             bg='#1a2332', fg='#ff4444', font=('Segoe UI', 16, 'bold'))
         title_label.pack()
         
-        # Thông điệp
-        missing_text = ', '.join(missing_resources)
-        message_text = f"Tài nguyên {missing_text} không tìm thấy trong kho phân bổ hiện tại. Hệ thống sẽ tự động loại bỏ khỏi cấu hình.\n\nCấu hình lại kho sau khi có thêm tài nguyên."
+        # Message
+        missing_text = ', '.join(missing_stocks)
+        message_text = f"Stocks {missing_text} not found in current portfolio. System will automatically remove from configuration.\n\nReconfigure portfolio after acquiring additional stocks."
         
         message_label = tk.Label(main_frame, text=message_text,
-                               bg='#2d2d2d', fg='#ffffff', font=('Segoe UI', 10),
-                               wraplength=400, justify='center')
-        message_label.pack(pady=(0, 20))
+                               bg='#1a2332', fg='#ffffff', font=('Segoe UI', 11),
+                               wraplength=450, justify='center')
+        message_label.pack(pady=(0, 25))
         
-        # Nút đóng
-        close_btn = tk.Button(main_frame, text="XÁC NHẬN",
-                            command=lambda: self._close_missing_dialog(dialog, missing_resources),
-                            font=('Segoe UI', 11, 'bold'), bg='#0066cc', fg='white',
+        # Close button
+        close_btn = tk.Button(main_frame, text="ACKNOWLEDGE",
+                            command=lambda: self._close_missing_dialog(dialog, missing_stocks),
+                            font=('Segoe UI', 12, 'bold'), bg='#0066cc', fg='white',
                             activebackground='#0052a3', relief='raised', bd=3,
-                            padx=30, pady=8)
+                            padx=35, pady=10)
         close_btn.pack()
     
-    def _close_missing_dialog(self, dialog, missing_resources):
-        """Đóng dialog tài nguyên thiếu và cập nhật lựa chọn"""
+    def _close_missing_dialog(self, dialog, missing_stocks):
+        """Close missing stocks dialog and update selection"""
         dialog.destroy()
         
-        # Loại bỏ tài nguyên thiếu khỏi lựa chọn
-        remaining_resources = [res for res in self.selected_resource_names if res not in missing_resources]
-        self.selected_resource_names = remaining_resources
+        # Remove missing stocks from selection
+        remaining_stocks = [stock for stock in self.selected_stock_symbols if stock not in missing_stocks]
+        self.selected_stock_symbols = remaining_stocks
         
-        # Cập nhật hiển thị
-        self.update_resources_display()
+        # Update display
+        self.update_portfolio_display()
         
-        # Ghi log cập nhật
-        if remaining_resources:
-            if len(remaining_resources) <= 3:
-                self.log_system_message(f"CẬP_NHẬT_KHO: Cấu hình đã được cập nhật: {', '.join(remaining_resources)}")
+        # Log update
+        if remaining_stocks:
+            if len(remaining_stocks) <= 3:
+                self.log_trading_message(f"PORTFOLIO_UPDATE: Configuration updated: {', '.join(remaining_stocks)}")
             else:
-                self.log_system_message(f"CẬP_NHẬT_KHO: Cấu hình đã được cập nhật ({len(remaining_resources)} tài nguyên)")
+                self.log_trading_message(f"PORTFOLIO_UPDATE: Configuration updated ({len(remaining_stocks)} stocks)")
         else:
-            self.log_system_message("CẤU_HÌNH_TRỐNG: Không còn tài nguyên nào. Vui lòng cấu hình lại kho phân bổ!")
+            self.log_trading_message("CONFIG_EMPTY: No stocks remaining. Please reconfigure portfolio!")
     
-    def get_allocated_resources_list(self):
-        """Lấy danh sách ID tài nguyên đã phân bổ"""
+    def get_owned_stocks_list(self):
+        """Get list of owned stock IDs"""
         try:
             endpoints = [
                 '/lol-champions/v1/owned-champions-minimal',
@@ -1370,23 +1367,23 @@ class SystemProcessManager:
                 try:
                     r = self.request('get', endpoint)
                     if r.status_code == 200:
-                        allocated = r.json()
-                        allocated_resources = []
+                        owned = r.json()
+                        owned_stocks = []
                         
-                        if isinstance(allocated, list):
-                            for resource in allocated:
-                                if isinstance(resource, dict):
-                                    resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
-                                    if resource_id and resource.get('active', True):
-                                        allocated_resources.append(resource_id)
-                        elif isinstance(allocated, dict) and 'champions' in allocated:
-                            for resource in allocated['champions']:
-                                resource_id = resource.get('id') or resource.get('championId') or resource.get('itemId')
-                                if resource_id and resource.get('active', True):
-                                    allocated_resources.append(resource_id)
+                        if isinstance(owned, list):
+                            for stock in owned:
+                                if isinstance(stock, dict):
+                                    stock_id = stock.get('id') or stock.get('championId') or stock.get('itemId')
+                                    if stock_id and stock.get('active', True):
+                                        owned_stocks.append(stock_id)
+                        elif isinstance(owned, dict) and 'champions' in owned:
+                            for stock in owned['champions']:
+                                stock_id = stock.get('id') or stock.get('championId') or stock.get('itemId')
+                                if stock_id and stock.get('active', True):
+                                    owned_stocks.append(stock_id)
                         
-                        if allocated_resources:
-                            return allocated_resources
+                        if owned_stocks:
+                            return owned_stocks
                 except Exception:
                     continue
             
@@ -1394,24 +1391,24 @@ class SystemProcessManager:
         except Exception:
             return []
     
-    def get_random_resource_from_selected(self):
-        """Lấy tài nguyên ngẫu nhiên từ danh sách đã chọn"""
-        if not self.selected_resource_names:
-            # Fallback cho hành vi gốc nếu không có tài nguyên được chọn
-            return self.get_random_resource()
+    def get_random_stock_from_selected(self):
+        """Get random stock from selected list"""
+        if not self.selected_stock_symbols:
+            # Fallback for original behavior if no stocks selected
+            return self.get_random_stock()
         
-        return random.choice(self.selected_resource_names)
+        return random.choice(self.selected_stock_symbols)
 
 
 def main():
     root = tk.Tk()
-    app = SystemProcessManager(root)
+    app = StockTradingPlatform(root)
     
     try:
         root.mainloop()
     except KeyboardInterrupt:
-        if app.is_monitoring:
-            app.stop_system_monitoring()
+        if app.is_trading_active:
+            app.stop_trading_system()
         root.quit()
 
 
