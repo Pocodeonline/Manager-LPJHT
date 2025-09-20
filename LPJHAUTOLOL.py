@@ -78,7 +78,21 @@ class StockTradingPlatform:
             "143": "38",   # Zyra
             "888": "39",   # Renata
             "75": "40",    # Nasus
-            "420": "41"    # Illaoi
+            "420": "41",   # Illaoi
+
+            # Bổ sung từ 42
+            "122": "42",   # Darius
+            "150": "43",   # Gnar
+            "120": "44",   # Hecarim
+            "39":  "45",   # Irelia
+            "40":  "46",   # Janna
+            "30":  "47",   # Karthus
+            "902": "48",   # Milio
+            "516": "49",   # Ornn
+            "19":  "50",   # Warwick
+            "154": "51",   # Zac
+            "110": "52",   # Varus
+            "555": "53"    # Pyke
         }
 
         self.stock_ids = {
@@ -122,8 +136,21 @@ class StockTradingPlatform:
             "38": 143,   # Zyra
             "39": 888,   # Renata
             "40": 75,    # Nasus
-            "41": 420    # Illaoi
+            "41": 420,   # Illaoi
+            "42": 122,   # Darius
+            "43": 150,   # Gnar
+            "44": 120,   # Hecarim
+            "45": 39,    # Irelia
+            "46": 40,    # Janna
+            "47": 30,    # Karthus
+            "48": 902,   # Milio
+            "49": 516,   # Ornn
+            "50": 19,    # Warwick
+            "51": 154,   # Zac
+            "52": 110,   # Varus
+            "53": 555    # Pyke
         }
+
 
         self.owned_stocks = []
         
